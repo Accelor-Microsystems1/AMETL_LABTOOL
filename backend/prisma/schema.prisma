@@ -1,0 +1,59 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum Role {
+  ADMIN
+  USER
+  VIEWER
+}
+
+model User {
+  id  String @id @default(uuid())
+  email String @unique
+  password String 
+  name String
+  role Role @default(VIEWER)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+enum UutType {
+  AS
+  UT 
+  BB
+}
+model UutRecord {
+  id String @id @default(uuid())
+  serialNo String  @unique
+  challanNo String?
+  uutInDate DateTime @default(now())
+  customerName String
+  customerCode String
+  testTypeName String
+  testTypeCode String
+  projectName String
+  uutDescription String?
+  uutSrNo String?
+  uutQty Int @default(1)
+  uutType UutType @default(UT)
+  inDateDay DateTime
+  serialOfDay Int
+  uutCode String @unique
+  
+  uutOutDate DateTime?
+
+  createdById String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([inDateDay, serialOfDay])
+  @@index([uutInDate])
+  @@index([customerCode])
+  @@index([projectName])
+  @@index([uutCode])
+}
