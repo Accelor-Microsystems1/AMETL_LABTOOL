@@ -19,6 +19,7 @@ const Header = () => {
     () => [
       { path: "/dashboard", label: "Dashboard", roles: ["ADMIN", "USER", "VIEWER"] },
       { path: "/units", label: "Unit In/Out", roles: ["ADMIN", "USER"] },
+      { path: "/list_of_employees", label: "List of Employees", roles: ["ADMIN"] },
       { path: "/admin", label: "Admin", roles: ["ADMIN"] },
     ],
     []

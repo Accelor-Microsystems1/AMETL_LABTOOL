@@ -2,9 +2,9 @@ import React from 'react'
 
 function List_Of_Employees() {
   return (
-    <div>
-      
-    </div>
+    <>
+      List of Employees
+    </>
   )
 }
 
