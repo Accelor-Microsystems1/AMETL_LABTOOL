@@ -1,3 +1,5 @@
+// src/pages/UutRecords/UutRecords.jsx
+
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../components/authentication/authContext";
@@ -71,7 +73,6 @@ const UutRecords = () => {
       if (data.success) {
         setStats(data.data);
       }
-      console.log(data)
     } catch (error) {
       console.error("Error fetching stats:", error);
     }
@@ -114,7 +115,7 @@ const UutRecords = () => {
       const data = await response.json();
 
       if (data.success) {
-        alert("Unit checked out successfully!");
+        alert("✓ Unit checked out successfully!");
         setShowEditModal(false);
         setEditingRecord(null);
         setOutDate("");
@@ -143,235 +144,155 @@ const UutRecords = () => {
   );
 
   return (
-    <div className="max-w-7xl mx-auto p-4 sm:p-6">
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
+    <div className="max-w-7xl mx-auto px-4 py-6">
+      
+      {/* Header */}
+      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-8">
         <div>
-          <h1 className="text-2xl sm:text-3xl font-bold text-slate-900">
-            Unit In/Out Records
-          </h1>
-          <p className="text-sm text-slate-500 mt-1">
-            Track and manage all UUT records
-          </p>
+          <h1 className="text-2xl font-semibold text-gray-900">Unit In/Out Records</h1>
+          <p className="text-sm text-gray-600 mt-1">Track and manage all UUT records</p>
         </div>
 
         {isAdmin && (
           <button
             onClick={() => navigate("/units/in")}
-            className="px-6 py-3 bg-amber-600 text-white rounded-xl font-semibold hover:bg-amber-700 transition-colors shadow-sm"
+            className="px-4 py-2 bg-indigo-600 text-white text-sm font-medium rounded-md hover:bg-indigo-700 transition-colors shadow-sm"
           >
-            + Add New Record
+            Add New Record
           </button>
         )}
       </div>
 
+      {/* Stats Summary */}
       {stats && (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-          <div className="bg-white rounded-xl border border-slate-200 p-5 shadow-sm">
-            <div className="flex items-center gap-3">
-              <div className="w-12 h-12 rounded-lg bg-blue-50 flex items-center justify-center">
-                <span className="text-2xl">📊</span>
-              </div>
-              <div>
-                <p className="text-sm text-slate-500 font-medium">Total Records</p>
-                <p className="text-2xl font-bold text-slate-900">{stats.totalRecords}</p>
-              </div>
-            </div>
-          </div>
-
-          <div className="bg-white rounded-xl border border-slate-200 p-5 shadow-sm">
-            <div className="flex items-center gap-3">
-              <div className="w-12 h-12 rounded-lg bg-amber-50 flex items-center justify-center">
-                <span className="text-2xl">🏢</span>
-              </div>
-              <div>
-                <p className="text-sm text-slate-500 font-medium">In Lab</p>
-                <p className="text-2xl font-bold text-amber-600">{stats.inLab}</p>
-              </div>
-            </div>
-          </div>
-
-          <div className="bg-white rounded-xl border border-slate-200 p-5 shadow-sm">
-            <div className="flex items-center gap-3">
-              <div className="w-12 h-12 rounded-lg bg-green-50 flex items-center justify-center">
-                <span className="text-2xl">✅</span>
-              </div>
-              <div>
-                <p className="text-sm text-slate-500 font-medium">Checked Out</p>
-                <p className="text-2xl font-bold text-green-600">{stats.checkedOut}</p>
-              </div>
-            </div>
-          </div>
-
-          <div className="bg-white rounded-xl border border-slate-200 p-5 shadow-sm">
-            <div className="flex items-center gap-3">
-              <div className="w-12 h-12 rounded-lg bg-purple-50 flex items-center justify-center">
-                <span className="text-2xl">📅</span>
-              </div>
-              <div>
-                <p className="text-sm text-slate-500 font-medium">Today</p>
-                <p className="text-2xl font-bold text-purple-600">{stats.todayRecords}</p>
-              </div>
-            </div>
-          </div>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+          <StatCard 
+            label="Total Records" 
+            value={stats.totalRecords} 
+            icon="📊" 
+            color="bg-blue-50 text-blue-600 border-blue-200"
+          />
+          <StatCard 
+            label="In Lab" 
+            value={stats.inLab} 
+            icon="🏢" 
+            color="bg-indigo-50 text-indigo-600 border-indigo-200"
+          />
+          <StatCard 
+            label="Checked Out" 
+            value={stats.checkedOut} 
+            icon="✅" 
+            color="bg-green-50 text-green-600 border-green-200"
+          />
+          <StatCard 
+            label="Today" 
+            value={stats.todayRecords} 
+            icon="📅" 
+            color="bg-amber-50 text-amber-600 border-amber-200"
+          />
         </div>
       )}
 
-      <div className="bg-white rounded-xl border border-slate-200 p-5 mb-6 shadow-sm">
-        <div className="flex flex-col lg:flex-row gap-4">
-          <div className="flex gap-2 flex-wrap">
-            <button
-              onClick={() => handleFilterChange("in-lab")}
-              className={`px-4 py-2 rounded-lg font-medium transition-colors ${
-                activeFilter === "in-lab"
-                  ? "bg-amber-600 text-white"
-                  : "bg-slate-100 text-slate-700 hover:bg-slate-200"
-              }`}
-            >
-              In Lab ({stats?.inLab || 0})
-            </button>
-
-            <button
-              onClick={() => handleFilterChange("checked-out")}
-              className={`px-4 py-2 rounded-lg font-medium transition-colors ${
-                activeFilter === "checked-out"
-                  ? "bg-amber-600 text-white"
-                  : "bg-slate-100 text-slate-700 hover:bg-slate-200"
-              }`}
-            >
-              Checked Out ({stats?.checkedOut || 0})
-            </button>
-
-            <button
-              onClick={() => handleFilterChange("all")}
-              className={`px-4 py-2 rounded-lg font-medium transition-colors ${
-                activeFilter === "all"
-                  ? "bg-amber-600 text-white"
-                  : "bg-slate-100 text-slate-700 hover:bg-slate-200"
-              }`}
-            >
-              All Records ({stats?.totalRecords || 0})
-            </button>
+      {/* Controls */}
+      <div className="bg-white border border-gray-200 rounded-lg p-4 mb-6">
+        <div className="flex flex-col sm:flex-row gap-3">
+          
+          {/* Filters */}
+          <div className="flex flex-wrap gap-2">
+            {[
+              { key: "in-lab", label: "In Lab", count: stats?.inLab || 0, activeColor: "bg-indigo-600 text-white" },
+              { key: "checked-out", label: "Checked Out", count: stats?.checkedOut || 0, activeColor: "bg-green-600 text-white" },
+              { key: "all", label: "All Records", count: stats?.totalRecords || 0, activeColor: "bg-gray-900 text-white" }
+            ].map((filter) => (
+              <button
+                key={filter.key}
+                onClick={() => handleFilterChange(filter.key)}
+                className={`px-3 py-1.5 text-sm rounded-md transition-colors ${
+                  activeFilter === filter.key
+                    ? filter.activeColor
+                    : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                }`}
+              >
+                {filter.label} ({filter.count})
+              </button>
+            ))}
           </div>
 
-          <div className="flex-1 lg:max-w-md">
+          {/* Search */}
+          <div className="flex-1 max-w-md">
             <input
               type="text"
-              placeholder="Search by Serial No, UUT Code, Customer..."
+              placeholder="Search records..."
               value={searchTerm}
               onChange={handleSearch}
-              className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-amber-500 outline-none"
+              className="w-full px-3 py-1.5 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-200 focus:border-indigo-300"
             />
           </div>
         </div>
       </div>
 
-      <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
-        <div className="overflow-x-auto">
-          {loading ? (
-            <div className="flex items-center justify-center py-12">
-              <div className="text-slate-500">Loading records...</div>
-            </div>
-          ) : paginatedRecords.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-12">
-              <div className="text-6xl mb-4">📭</div>
-              <div className="text-lg font-medium text-slate-900 mb-1">No records found</div>
-              <div className="text-sm text-slate-500">
-                {searchTerm
-                  ? "Try adjusting your search"
-                  : "No records match the current filter"}
-              </div>
-            </div>
-          ) : (
+      {/* Table */}
+      <div className="bg-white border border-gray-200 rounded-lg overflow-hidden">
+        {loading ? (
+          <div className="py-12 text-center">
+            <div className="inline-block h-6 w-6 animate-spin rounded-full border-2 border-indigo-400 border-t-transparent"></div>
+          </div>
+        ) : paginatedRecords.length === 0 ? (
+          <div className="py-12 text-center">
+            <p className="text-gray-500">No records found</p>
+          </div>
+        ) : (
+          <div className="overflow-x-auto">
             <table className="w-full">
-              <thead className="bg-slate-50 border-b border-slate-200">
+              <thead className="bg-gray-50 border-b border-gray-200">
                 <tr>
-                  <th className="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">
-                    UUT Code
-                  </th>
-                  <th className="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">
-                    Serial No
-                  </th>
-                  <th className="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">
-                    Customer
-                  </th>
-                  <th className="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">
-                    Project
-                  </th>
-                  <th className="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">
-                    Test Type
-                  </th>
-                  <th className="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">
-                    In Date
-                  </th>
-                  <th className="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">
-                    Out Date
-                  </th>
-                  <th className="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">
-                    Status
-                  </th>
-                  {isAdmin && (
-                    <th className="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">
-                      Action
-                    </th>
-                  )}
+                  <TableHeader>UUT Code</TableHeader>
+                  <TableHeader>Serial No</TableHeader>
+                  <TableHeader>Customer</TableHeader>
+                  <TableHeader>Project</TableHeader>
+                  <TableHeader>Test Type</TableHeader>
+                  <TableHeader>In Date</TableHeader>
+                  <TableHeader>Out Date</TableHeader>
+                  <TableHeader>Status</TableHeader>
+                  {isAdmin && <TableHeader>Action</TableHeader>}
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-200">
+              <tbody className="divide-y divide-gray-100">
                 {paginatedRecords.map((record) => (
-                  <tr key={record.id} className="hover:bg-slate-50 transition-colors">
-                    <td className="px-4 py-4">
-                      <span className="font-mono text-sm font-semibold text-slate-900">
+                  <tr key={record.id} className="hover:bg-gray-50 transition-colors">
+                    <td className="px-4 py-3">
+                      <code className="text-xs font-mono bg-gray-100 px-2 py-1 rounded text-gray-800">
                         {record.uutCode}
-                      </span>
+                      </code>
                     </td>
-                    <td className="px-4 py-4 text-sm text-slate-700">
-                      {record.serialNo}
+                    <td className="px-4 py-3 text-sm text-gray-800">{record.serialNo}</td>
+                    <td className="px-4 py-3">
+                      <div className="text-sm font-medium text-gray-900">{record.customerName}</div>
+                      <div className="text-xs text-gray-500">{record.customerCode}</div>
                     </td>
-                    <td className="px-4 py-4">
-                      <div>
-                        <div className="text-sm font-medium text-slate-900">
-                          {record.customerName}
-                        </div>
-                        <div className="text-xs text-slate-500">
-                          {record.customerCode}
-                        </div>
-                      </div>
-                    </td>
-                    <td className="px-4 py-4 text-sm text-slate-700">
-                      {record.projectName}
-                    </td>
-                    <td className="px-4 py-4">
-                      <span className="text-xs font-semibold px-2 py-1 bg-blue-100 text-blue-700 rounded">
+                    <td className="px-4 py-3 text-sm text-gray-800">{record.projectName}</td>
+                    <td className="px-4 py-3">
+                      <span className="inline-flex items-center px-2 py-1 text-xs font-medium bg-indigo-100 text-indigo-700 rounded">
                         {record.testTypeName}
                       </span>
                     </td>
-                    <td className="px-4 py-4 text-sm text-slate-700">
-                      {formatDate(record.uutInDate)}
+                    <td className="px-4 py-3 text-sm text-gray-800">{formatDate(record.uutInDate)}</td>
+                    <td className="px-4 py-3 text-sm text-gray-800">
+                      {record.uutOutDate ? formatDate(record.uutOutDate) : "-"}
                     </td>
-                    <td className="px-4 py-4 text-sm text-slate-700">
+                    <td className="px-4 py-3">
                       {record.uutOutDate ? (
-                        formatDate(record.uutOutDate)
+                        <StatusBadge status="checked-out" />
                       ) : (
-                        <span className="text-slate-400">-</span>
-                      )}
-                    </td>
-                    <td className="px-4 py-4">
-                      {record.uutOutDate ? (
-                        <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-green-100 text-green-700">
-                          Checked Out
-                        </span>
-                      ) : (
-                        <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-amber-100 text-amber-700">
-                          In Lab
-                        </span>
+                        <StatusBadge status="in-lab" />
                       )}
                     </td>
                     {isAdmin && (
-                      <td className="px-4 py-4">
+                      <td className="px-4 py-3">
                         {!record.uutOutDate && (
                           <button
                             onClick={() => openEditModal(record)}
-                            className="px-3 py-1.5 bg-amber-600 text-white text-sm rounded-lg hover:bg-amber-700 transition-colors"
+                            className="text-sm text-indigo-600 hover:text-indigo-800 font-medium hover:underline"
                           >
                             Add Out Date
                           </button>
@@ -382,92 +303,79 @@ const UutRecords = () => {
                 ))}
               </tbody>
             </table>
-          )}
-        </div>
+          </div>
+        )}
 
+        {/* Pagination */}
         {!loading && paginatedRecords.length > 0 && (
-          <div className="px-4 py-3 border-t border-slate-200 bg-slate-50">
-            <div className="flex items-center justify-between">
-              <div className="text-sm text-slate-600">
-                Showing {(currentPage - 1) * recordsPerPage + 1} to{" "}
-                {Math.min(currentPage * recordsPerPage, records.length)} of{" "}
-                {records.length} records
-              </div>
-
-              <div className="flex gap-2">
-                <button
-                  onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
-                  disabled={currentPage === 1}
-                  className="px-3 py-1.5 border border-slate-300 rounded-lg text-sm font-medium text-slate-700 hover:bg-slate-100 disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  Previous
-                </button>
-
-                <div className="flex gap-1">
-                  {[...Array(totalPages)].map((_, i) => (
-                    <button
-                      key={i}
-                      onClick={() => setCurrentPage(i + 1)}
-                      className={`px-3 py-1.5 rounded-lg text-sm font-medium ${
-                        currentPage === i + 1
-                          ? "bg-amber-600 text-white"
-                          : "border border-slate-300 text-slate-700 hover:bg-slate-100"
-                      }`}
-                    >
-                      {i + 1}
-                    </button>
-                  ))}
-                </div>
-
-                <button
-                  onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
-                  disabled={currentPage === totalPages}
-                  className="px-3 py-1.5 border border-slate-300 rounded-lg text-sm font-medium text-slate-700 hover:bg-slate-100 disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  Next
-                </button>
-              </div>
+          <div className="px-4 py-3 border-t border-gray-200 flex items-center justify-between">
+            <div className="text-sm text-gray-600">
+              Showing {(currentPage - 1) * recordsPerPage + 1} to{" "}
+              {Math.min(currentPage * recordsPerPage, records.length)} of {records.length} records
+            </div>
+            
+            <div className="flex items-center space-x-1">
+              <button
+                onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                disabled={currentPage === 1}
+                className="px-3 py-1.5 text-sm border border-gray-300 rounded-md hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                Previous
+              </button>
+              
+              {[...Array(Math.min(totalPages, 5))].map((_, i) => {
+                const pageNum = i + 1;
+                return (
+                  <button
+                    key={pageNum}
+                    onClick={() => setCurrentPage(pageNum)}
+                    className={`px-3 py-1.5 text-sm rounded-md ${
+                      currentPage === pageNum
+                        ? "bg-indigo-600 text-white"
+                        : "border border-gray-300 hover:bg-gray-100"
+                    }`}
+                  >
+                    {pageNum}
+                  </button>
+                );
+              })}
+              
+              <button
+                onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                disabled={currentPage === totalPages}
+                className="px-3 py-1.5 text-sm border border-gray-300 rounded-md hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                Next
+              </button>
             </div>
           </div>
         )}
       </div>
 
+      {/* Edit Modal */}
       {showEditModal && editingRecord && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl">
-            <h2 className="text-xl font-bold text-slate-900 mb-4">
-              Add UUT Out Date
-            </h2>
-
-            <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 mb-4">
-              <div className="text-xs font-semibold text-amber-800 uppercase mb-2">
-                UUT Details
-              </div>
-              <div className="space-y-1">
-                <div className="text-sm">
-                  <span className="font-medium text-slate-700">UUT Code:</span>{" "}
-                  <span className="font-mono text-slate-900">{editingRecord.uutCode}</span>
-                </div>
-                <div className="text-sm">
-                  <span className="font-medium text-slate-700">Serial No:</span>{" "}
-                  <span className="text-slate-900">{editingRecord.serialNo}</span>
-                </div>
-                <div className="text-sm">
-                  <span className="font-medium text-slate-700">Customer:</span>{" "}
-                  <span className="text-slate-900">{editingRecord.customerName}</span>
-                </div>
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-lg max-w-md w-full p-6 shadow-xl">
+            <h2 className="text-lg font-semibold text-gray-900 mb-4">Add UUT Out Date</h2>
+            
+            <div className="mb-6 p-4 bg-indigo-50 rounded-lg border border-indigo-200">
+              <div className="text-xs font-medium text-indigo-700 uppercase tracking-wide mb-2">UUT Details</div>
+              <div className="space-y-2 text-sm">
+                <div><span className="font-medium text-gray-700">UUT Code:</span> <span className="font-mono">{editingRecord.uutCode}</span></div>
+                <div><span className="font-medium text-gray-700">Serial No:</span> {editingRecord.serialNo}</div>
+                <div><span className="font-medium text-gray-700">Customer:</span> {editingRecord.customerName}</div>
               </div>
             </div>
 
             <div className="mb-6">
-              <label className="block text-sm font-medium text-slate-700 mb-2">
-                UUT Out Date <span className="text-red-500">*</span>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Out Date <span className="text-red-500">*</span>
               </label>
               <input
                 type="date"
                 value={outDate}
                 onChange={(e) => setOutDate(e.target.value)}
-                className="w-full px-4 py-2 border border-slate-300 rounded-xl focus:ring-2 focus:ring-amber-500 focus:border-amber-500 outline-none"
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-200 focus:border-indigo-300"
               />
             </div>
 
@@ -478,21 +386,57 @@ const UutRecords = () => {
                   setEditingRecord(null);
                   setOutDate("");
                 }}
-                className="flex-1 px-4 py-2.5 border border-slate-300 text-slate-700 rounded-xl font-medium hover:bg-slate-50"
+                className="flex-1 px-4 py-2 text-sm border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50"
               >
                 Cancel
               </button>
               <button
                 onClick={handleCheckout}
-                className="flex-1 px-4 py-2.5 bg-amber-600 text-white rounded-xl font-semibold hover:bg-amber-700"
+                className="flex-1 px-4 py-2 text-sm bg-indigo-600 text-white rounded-md hover:bg-indigo-700"
               >
-                Save Out Date
+                Save
               </button>
             </div>
           </div>
         </div>
       )}
     </div>
+  );
+};
+
+// Reusable Components
+const StatCard = ({ label, value, icon, color }) => (
+  <div className="bg-white border rounded-lg p-4 hover:shadow-sm transition-shadow">
+    <div className="flex items-center gap-3">
+      <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${color}`}>
+        <span className="text-lg">{icon}</span>
+      </div>
+      <div>
+        <div className="text-sm text-gray-600 font-medium">{label}</div>
+        <div className="text-xl font-semibold text-gray-900 mt-1">{value}</div>
+      </div>
+    </div>
+  </div>
+);
+
+const TableHeader = ({ children }) => (
+  <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+    {children}
+  </th>
+);
+
+const StatusBadge = ({ status }) => {
+  const config = {
+    'in-lab': { text: 'In Lab', bgColor: 'bg-indigo-100', textColor: 'text-indigo-700' },
+    'checked-out': { text: 'Checked Out', bgColor: 'bg-green-100', textColor: 'text-green-700' }
+  };
+  
+  const { text, bgColor, textColor } = config[status] || config['in-lab'];
+  
+  return (
+    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${bgColor} ${textColor}`}>
+      {text}
+    </span>
   );
 };
 
