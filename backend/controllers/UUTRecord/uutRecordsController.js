@@ -23,9 +23,9 @@ const getAllRecords = (prisma) => async (req, res) => {
         }
 
         if (status === 'in') {
-            where.uutOutDate = null;
+            where.outDate = null;
         } else if (status === 'out') {
-            where.uutOutDate = { not: null };
+            where.outDate = { not: null };
         }
         const records = await prisma.uutRecord.findMany({
             where, orderBy: { createdAt: 'desc' },
@@ -376,12 +376,12 @@ const updateRecord = (prisma) => async (req, res) => {
 const checkoutRecord = (prisma) => async (req, res) => {
   try {
     const { id } = req.params;
-    const { uutOutDate } = req.body;
+    const { outDate } = req.body;
 
-    if (!uutOutDate) {
+    if (!outDate) {
       return res.status(400).json({
         success: false,
-        error: 'uutOutDate is required'
+        error: 'Out Date is required'
       });
     }
 
@@ -396,7 +396,7 @@ const checkoutRecord = (prisma) => async (req, res) => {
       });
     }
 
-    if (record.uutOutDate) {
+    if (record.outDate) {
       return res.status(400).json({
         success: false,
         error: 'This unit has already been checked out'
@@ -406,7 +406,7 @@ const checkoutRecord = (prisma) => async (req, res) => {
     const updated = await prisma.uutRecord.update({
       where: { id },
       data: {
-        uutOutDate: new Date(uutOutDate)
+        outDate: new Date(outDate)
       }
     });
 
@@ -460,8 +460,8 @@ const getStats = (prisma) => async (req, res) => {
       todayRecords
     ] = await Promise.all([
       prisma.uutRecord.count(),
-      prisma.uutRecord.count({ where: { uutOutDate: null } }),
-      prisma.uutRecord.count({ where: { uutOutDate: { not: null } } }),
+      prisma.uutRecord.count({ where: { outDate: null } }),
+      prisma.uutRecord.count({ where: { outDate: { not: null } } }),
       prisma.uutRecord.count({
         where: {
           uutInDate: {

@@ -24,11 +24,11 @@ const UutIn = () => {
     testTypeName: "CEMILAC",
     testTypeCode: "C",
     projectName: "",
-    uutDescription: "",
     uutType: "UT",
-    uutSrNo: "",
-    uutQty: 1
+    contactPersonName: "",
   });
+  const uutQty= getUnitCount(form.serialNo);
+  const today = new Date().toISOString().split("T")[0];
 
   const [showCustomTest, setShowCustomTest] = useState(false);
   const [customTestName, setCustomTestName] = useState("");
@@ -91,23 +91,74 @@ const UutIn = () => {
     setCustomTestName("");
     setCustomTestCode("");
   };
+  function getUnitCount(input) {
+  if (!input || !input.trim()) return 0;
+
+  const unique = new Set();
+  const parts = input.split(",");
+
+  for (let raw of parts) {
+    let part = raw.trim();
+    if (!part) continue;
+
+    part = part.replace(/\s+to\s+/gi, "-");
+
+    // RANGE CASE
+    if (part.includes("-")) {
+      const [startRaw, endRaw] = part.split("-").map(p => p.trim());
+
+      // extract prefix + number from start
+      const match = startRaw.match(/^(.*?)(\d+)$/);
+      if (!match) continue;
+
+      const prefix = match[1] || "";
+      const startStr = match[2];
+      const startNum = Number(startStr);
+
+      // end part: number only OR full serial
+      const endMatch = endRaw.match(/(\d+)$/);
+      const endNum = endMatch ? Number(endMatch[1]) : NaN;
+
+      if (isNaN(startNum) || isNaN(endNum) || startNum > endNum) continue;
+
+      const padLength = startStr.length;
+
+      for (let i = startNum; i <= endNum; i++) {
+        unique.add(prefix + i.toString().padStart(padLength, "0"));
+      }
+    }
+    // SINGLE SERIAL
+    else {
+      unique.add(part);
+    }
+  }
+
+  return unique.size;
+}
 
   const handlePreview = async () => {
     if (!form.serialNo || !form.customerName || !form.testTypeName || !form.testTypeCode || !form.projectName) {
       alert("Please fill all required fields");
       return;
     }
+     if(uutQty<=0) {
+      alert("Please fill  Serial No. correctly");
+      return;
+     }
     setLoading(true);
     try {
       const token = localStorage.getItem("token") || sessionStorage.getItem("token");
-      
+      const payload={
+        ...form,
+        uutQty,
+      }
       const response = await fetch(`${API_BASE_URL}/uut-records/preview`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
           "Authorization": `Bearer ${token}`
         },
-        body: JSON.stringify(form)
+        body: JSON.stringify(payload)
       });
       const data = await response.json();
       if (!response.ok) {
@@ -129,6 +180,7 @@ const UutIn = () => {
       const token = localStorage.getItem("token") || sessionStorage.getItem("token");      
       const payload = {
         ...form,
+        uutQty,
         expectedUutCode: previewData.uutCode
       };
       const response = await fetch(`${API_BASE_URL}/uut-records`, {
@@ -163,7 +215,6 @@ const UutIn = () => {
         uutDescription: "",
         uutType: "UT",
         uutSrNo: "",
-        uutQty: 1
       });      
       setShowConfirmModal(false);
       setPreviewData(null);
@@ -198,26 +249,30 @@ const UutIn = () => {
             </div>
             <div>
               <label className="block text-sm font-medium text-slate-700 mb-1">
-                Challan No.
+                Project Name <span className="text-red-500">*</span>
+              </label>
+              <input
+                type="text"
+                value={form.projectName}
+                onChange={handleChange("projectName")}
+                className="w-full px-4 py-2 border border-slate-300 rounded-xl focus:ring-2 focus:ring-amber-500 focus:border-amber-500 outline-none"
+                placeholder="e.g., Project V2"
+              />
+            </div>
+          
+
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-1">
+                Challan No. <span className="text-red-500">*</span>
               </label>
               <input
                 type="text"
                 value={form.challanNo}
                 onChange={handleChange("challanNo")}
+                placeholder="xxxx"
                 className="w-full px-4 py-2 border border-slate-300 rounded-xl focus:ring-2 focus:ring-amber-500 focus:border-amber-500 outline-none"                
-              />
-            </div>
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">
-                UUT In Date <span className="text-red-500">*</span>
-              </label>
-              <input
-                type="date"
-                value={form.uutInDate}
-                onChange={handleChange("uutInDate")}
-                className="w-full px-4 py-2 border border-slate-300 rounded-xl focus:ring-2 focus:ring-amber-500 focus:border-amber-500 outline-none"
               />
             </div>
 
@@ -296,21 +351,6 @@ const UutIn = () => {
 
             <div>
               <label className="block text-sm font-medium text-slate-700 mb-1">
-                Project Name <span className="text-red-500">*</span>
-              </label>
-              <input
-                type="text"
-                value={form.projectName}
-                onChange={handleChange("projectName")}
-                className="w-full px-4 py-2 border border-slate-300 rounded-xl focus:ring-2 focus:ring-amber-500 focus:border-amber-500 outline-none"
-                placeholder="e.g., Project V2"
-              />
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">
                 UUT Type <span className="text-red-500">*</span>
               </label>
               <select
@@ -323,14 +363,30 @@ const UutIn = () => {
                 <option value="BB">Bare Board (BB)</option>
               </select>
             </div>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div>
               <label className="block text-sm font-medium text-slate-700 mb-1">
-                UUT Sr. No.
+                UUT In Date <span className="text-red-500">*</span>
+              </label>
+              <input
+                type="date"
+                value={form.uutInDate}
+                onChange={handleChange("uutInDate")}
+                max={today}
+                className="w-full px-4 py-2 border border-slate-300 rounded-xl focus:ring-2 focus:ring-amber-500 focus:border-amber-500 outline-none"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-1">
+                Contact Person Name
               </label>
               <input
                 type="text"
-                value={form.uutSrNo}
-                onChange={handleChange("uutSrNo")}
+                value={form.contactPersonName}
+                onChange={handleChange("contactPersonName")}
+                placeholder="eg. John Doe"
                 className="w-full px-4 py-2 border border-slate-300 rounded-xl focus:ring-2 focus:ring-amber-500 focus:border-amber-500 outline-none"                
               />
             </div>
@@ -341,24 +397,14 @@ const UutIn = () => {
               <input
                 type="number"
                 min="1"
-                value={form.uutQty}
-                onChange={handleChange("uutQty")}
+                readOnly
+                value={uutQty}
                 className="w-full px-4 py-2 border border-slate-300 rounded-xl focus:ring-2 focus:ring-amber-500 focus:border-amber-500 outline-none"
               />
             </div>
           </div>
 
-          <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1">
-              UUT Description
-            </label>
-            <textarea
-              value={form.uutDescription}
-              onChange={handleChange("uutDescription")}
-              rows="3"
-              className="w-full px-4 py-2 border border-slate-300 rounded-xl focus:ring-2 focus:ring-amber-500 focus:border-amber-500 outline-none"
-              />
-          </div>
+          
 
           <div className="flex justify-end gap-3 pt-4 border-t border-slate-200">
             <button
@@ -374,7 +420,7 @@ const UutIn = () => {
               disabled={loading}
               className="px-6 py-2.5 bg-amber-600 text-white rounded-xl font-semibold hover:bg-amber-700 disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {loading ? "Processing..." : "Save"}
+              {loading ? "Processing..." : "Create"}
             </button>
           </div>
         </form>

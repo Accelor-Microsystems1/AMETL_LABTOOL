@@ -7,6 +7,8 @@ datasource db {
 }
 
 enum Role {
+  HOD
+  MANAGER
   ADMIN
   USER
   VIEWER
@@ -27,25 +29,26 @@ enum UutType {
   UT 
   BB
 }
+
 model UutRecord {
   id String @id @default(uuid())
-  serialNo String  @unique
-  challanNo String?
-  uutInDate DateTime @default(now())
+  srNo Int?
+  traceId  String? @unique
+  serialNo String
+  challanNo String
+  uutInDate DateTime 
   customerName String
   customerCode String
   testTypeName String
   testTypeCode String
   projectName String
-  uutDescription String?
-  uutSrNo String?
-  uutQty Int @default(1)
-  uutType UutType @default(UT)
+  uutQty Int
+  uutType UutType
   inDateDay DateTime
   serialOfDay Int
   uutCode String @unique
+  outs UutOut[]
   
-  uutOutDate DateTime?
 
   createdById String?
   createdAt DateTime @default(now())
@@ -56,4 +59,16 @@ model UutRecord {
   @@index([customerCode])
   @@index([projectName])
   @@index([uutCode])
+}
+
+model UutOut {
+  id String @id @default(uuid())
+  uutRecordId String
+  uutRecord UutRecord @relation(fields: [uutRecordId], references: [id])
+
+  outQty Int?
+  outDate DateTime?
+  remarks String?
+
+  createdAt DateTime @default(now())
 }

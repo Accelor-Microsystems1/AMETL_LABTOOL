@@ -79,7 +79,9 @@ function Register({onRegisterSuccess}) {
           >
             <option value="VIEWER">Viewer</option>
             <option value="USER">User</option>
-            <option value="ADMIN">Admin</option>
+            <option value="ADMIN">Admin Manager</option>
+            <option value="MANAGER">Technical Manager</option>
+            <option value="HOD">HOD</option>
           </select>
         </div>
           <button 

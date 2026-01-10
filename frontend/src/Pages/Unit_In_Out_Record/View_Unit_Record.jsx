@@ -7,6 +7,8 @@ const UutRecords = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
   const isAdmin = user?.role === "ADMIN";
+  const isManager = user?.role === "MANAGER";
+  const isHod = user?.role === "HOD";
 
   const [records, setRecords] = useState([]);
   const [stats, setStats] = useState(null);
@@ -21,6 +23,8 @@ const UutRecords = () => {
   const [editingRecord, setEditingRecord] = useState(null);
   const [outDate, setOutDate] = useState("");
 
+  const today = new Date().toISOString().split("T")[0];
+
   useEffect(() => {
     fetchRecords();
     fetchStats();
@@ -29,22 +33,23 @@ const UutRecords = () => {
   const fetchRecords = async () => {
     setLoading(true);
     try {
-      const token = localStorage.getItem("token") || sessionStorage.getItem("token");
-      
+      const token =
+        localStorage.getItem("token") || sessionStorage.getItem("token");
+
       let url = `${API_BASE_URL}/uut-records?`;
-      
+
       if (activeFilter === "in-lab") {
         url += "status=in";
       } else if (activeFilter === "checked-out") {
         url += "status=out";
       }
-      
+
       if (searchTerm) {
         url += `&search=${encodeURIComponent(searchTerm)}`;
       }
 
       const response = await fetch(url, {
-        headers: { Authorization: `Bearer ${token}` }
+        headers: { Authorization: `Bearer ${token}` },
       });
 
       const data = await response.json();
@@ -62,9 +67,10 @@ const UutRecords = () => {
 
   const fetchStats = async () => {
     try {
-      const token = localStorage.getItem("token") || sessionStorage.getItem("token");
+      const token =
+        localStorage.getItem("token") || sessionStorage.getItem("token");
       const response = await fetch(`${API_BASE_URL}/uut-records/stats`, {
-        headers: { Authorization: `Bearer ${token}` }
+        headers: { Authorization: `Bearer ${token}` },
       });
       const data = await response.json();
       if (data.success) {
@@ -87,7 +93,7 @@ const UutRecords = () => {
 
   const openEditModal = (record) => {
     setEditingRecord(record);
-    setOutDate(new Date().toISOString().split('T')[0]);
+    setOutDate(new Date().toISOString().split("T")[0]);
     setShowEditModal(true);
   };
 
@@ -95,17 +101,18 @@ const UutRecords = () => {
     if (!editingRecord || !outDate) return;
 
     try {
-      const token = localStorage.getItem("token") || sessionStorage.getItem("token");
-      
+      const token =
+        localStorage.getItem("token") || sessionStorage.getItem("token");
+
       const response = await fetch(
         `${API_BASE_URL}/uut-records/${editingRecord.id}/checkout`,
         {
           method: "PUT",
           headers: {
             "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`
+            Authorization: `Bearer ${token}`,
           },
-          body: JSON.stringify({ uutOutDate: outDate })
+          body: JSON.stringify({ uutOutDate: outDate }),
         }
       );
 
@@ -131,7 +138,7 @@ const UutRecords = () => {
     return new Date(dateString).toLocaleDateString("en-GB", {
       day: "2-digit",
       month: "short",
-      year: "numeric"
+      year: "numeric",
     });
   };
 
@@ -142,11 +149,14 @@ const UutRecords = () => {
 
   return (
     <div className="max-w-7xl mx-auto px-4 py-6">
-      
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-8">
         <div>
-          <h1 className="text-2xl font-semibold text-gray-900">Unit In/Out Records</h1>
-          <p className="text-sm text-gray-600 mt-1">Track and manage all UUT records</p>
+          <h1 className="text-2xl font-semibold text-gray-900">
+            Unit In/Out Records
+          </h1>
+          <p className="text-sm text-gray-600 mt-1">
+            Track and manage all UUT records
+          </p>
         </div>
 
         {isAdmin && (
@@ -154,35 +164,35 @@ const UutRecords = () => {
             onClick={() => navigate("/units/in")}
             className="px-4 py-2 bg-indigo-600 text-white text-sm font-medium rounded-md hover:bg-indigo-700 transition-colors shadow-sm"
           >
-            Add 
+            Add
           </button>
         )}
       </div>
 
       {stats && (
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-          <StatCard 
-            label="Total Records" 
-            value={stats.totalRecords} 
-            icon="📊" 
+          <StatCard
+            label="Total Records"
+            value={stats.totalRecords}
+            icon="📊"
             color="bg-blue-50 text-blue-600 border-blue-200"
           />
-          <StatCard 
-            label="In Lab" 
-            value={stats.inLab} 
-            icon="🏢" 
+          <StatCard
+            label="In Lab"
+            value={stats.inLab}
+            icon="🏢"
             color="bg-indigo-50 text-indigo-600 border-indigo-200"
           />
-          <StatCard 
-            label="Checked Out" 
-            value={stats.checkedOut} 
-            icon="✅" 
+          <StatCard
+            label="Checked Out"
+            value={stats.checkedOut}
+            icon="✅"
             color="bg-green-50 text-green-600 border-green-200"
           />
-          <StatCard 
-            label="Today" 
-            value={stats.todayRecords} 
-            icon="📅" 
+          <StatCard
+            label="Today"
+            value={stats.todayRecords}
+            icon="📅"
             color="bg-amber-50 text-amber-600 border-amber-200"
           />
         </div>
@@ -190,12 +200,26 @@ const UutRecords = () => {
 
       <div className="bg-white border border-gray-200 rounded-lg p-4 mb-6">
         <div className="flex flex-col sm:flex-row gap-3">
-          
           <div className="flex flex-wrap gap-2">
             {[
-              { key: "in-lab", label: "In Lab", count: stats?.inLab || 0, activeColor: "bg-indigo-600 text-white" },
-              { key: "checked-out", label: "Checked Out", count: stats?.checkedOut || 0, activeColor: "bg-green-600 text-white" },
-              { key: "all", label: "All Records", count: stats?.totalRecords || 0, activeColor: "bg-gray-900 text-white" }
+              {
+                key: "in-lab",
+                label: "In Lab",
+                count: stats?.inLab || 0,
+                activeColor: "bg-indigo-600 text-white",
+              },
+              {
+                key: "checked-out",
+                label: "Checked Out",
+                count: stats?.checkedOut || 0,
+                activeColor: "bg-green-600 text-white",
+              },
+              {
+                key: "all",
+                label: "All Records",
+                count: stats?.totalRecords || 0,
+                activeColor: "bg-gray-900 text-white",
+              },
             ].map((filter) => (
               <button
                 key={filter.key}
@@ -222,7 +246,6 @@ const UutRecords = () => {
           </div>
         </div>
       </div>
-
       <div className="bg-white border border-gray-200 rounded-lg overflow-hidden">
         {loading ? (
           <div className="py-12 text-center">
@@ -234,58 +257,91 @@ const UutRecords = () => {
           </div>
         ) : (
           <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead className="bg-gray-50 border-b border-gray-200">
+            <table className="w-full table-auto border border-gray-800">
+              <thead className="bg-gray-50 ">
                 <tr>
-                  <TableHeader>UUT Code</TableHeader>
-                  <TableHeader>Serial No</TableHeader>
-                  <TableHeader>Customer</TableHeader>
-                  <TableHeader>Project</TableHeader>
-                  <TableHeader>Test Type</TableHeader>
-                  <TableHeader>In Date</TableHeader>
-                  <TableHeader>Out Date</TableHeader>
-                  <TableHeader>Status</TableHeader>
-                  {isAdmin && <TableHeader>Action</TableHeader>}
+                  <th className="border border-gray-800">UUT Code</th>
+                  <th className="border border-gray-800">Serial No</th>
+                  <th className="border border-gray-800">Challan No</th>
+                  <th className="border border-gray-800">Customer</th>
+                  <th className="border border-gray-800">Project</th>
+                  <th className="border border-gray-800">Test Type</th>
+                  <th className="border border-gray-800">In Date</th>
+                  <th className="border border-gray-800">Quantity In </th>
+                  <th className="border border-gray-800">Quantity Out </th>
+                  <th className="border border-gray-800 w-28">Out Date</th>
+
+                  {isAdmin && (
+                    <th className="border border-gray-800">Action</th>
+                  )}
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100">
                 {paginatedRecords.map((record) => (
-                  <tr key={record.id} className="hover:bg-gray-50 transition-colors">
-                    <td className="px-4 py-3">
+                  <tr
+                    key={record.id}
+                    className="hover:bg-gray-50 transition-colors"
+                  >
+                    <td className="px-4 py-3  border border-gray-800">
                       <code className="text-xs font-mono bg-gray-100 px-2 py-1 rounded text-gray-800">
                         {record.uutCode}
                       </code>
                     </td>
-                    <td className="px-4 py-3 text-sm text-gray-800">{record.serialNo}</td>
-                    <td className="px-4 py-3">
-                      <div className="text-sm font-medium text-gray-900">{record.customerName}</div>
-                      <div className="text-xs text-gray-500">{record.customerCode}</div>
+                    <td className="px-4 py-3 text-sm text-gray-800 border border-gray-800">
+                      {record.serialNo}
                     </td>
-                    <td className="px-4 py-3 text-sm text-gray-800">{record.projectName}</td>
-                    <td className="px-4 py-3">
+                    <td className="px-4 py-3 text-sm text-gray-800 border border-gray-800">
+                      {record.challanNo}
+                    </td>
+                    <td className="px-4 py-3 border border-gray-800">
+                      <div className="text-sm font-medium text-gray-900">
+                        {record.customerName}
+                      </div>
+                      <div className="text-xs text-gray-500">
+                        {record.customerCode}
+                      </div>
+                    </td>
+                    <td className="px-4 py-3 border border-gray-800 text-sm text-gray-800">
+                      {record.projectName}
+                    </td>
+                    <td className="px-4 py-3 border border-gray-800">
                       <span className="inline-flex items-center px-2 py-1 text-xs font-medium bg-indigo-100 text-indigo-700 rounded">
                         {record.testTypeName}
                       </span>
                     </td>
-                    <td className="px-4 py-3 text-sm text-gray-800">{formatDate(record.uutInDate)}</td>
-                    <td className="px-4 py-3 text-sm text-gray-800">
-                      {record.uutOutDate ? formatDate(record.uutOutDate) : "-"}
+                    <td className="px-4 py-3 border border-gray-800 text-sm text-gray-800">
+                      {formatDate(record.uutInDate)}
                     </td>
-                    <td className="px-4 py-3">
-                      {record.uutOutDate ? (
-                        <StatusBadge status="checked-out" />
-                      ) : (
-                        <StatusBadge status="in-lab" />
-                      )}
+                    <td className="px-4 py-3 border border-gray-800 text-sm text-gray-800">
+                      {record.uutQty}
                     </td>
-                    {isAdmin && (
-                      <td className="px-4 py-3">
+                    <td className="px-4 py-0 border border-gray-800">
+                      <input
+                        type="number"
+                        placeholder="N/A"
+                        min={1}
+                        max={record.uutQty}
+                        className="h-full w-full text-center text-gray-800 border-none outline-none"
+                      />
+                    </td>
+
+                    <td className="px-4 py-3 border border-gray-800 text-sm text-gray-800">
+                      <input
+                        type="date"
+                        defaultValue={today}
+                        max={today}
+                        className="h-full w-full text-center text-gray-800 border-none outline-none"
+                      />
+                    </td>
+
+                    {(isAdmin || isManager || isHod) && (
+                      <td className="px-4 py-3 border border-gray-800">
                         {!record.uutOutDate && (
                           <button
                             onClick={() => openEditModal(record)}
                             className="text-sm text-indigo-600 hover:text-indigo-800 font-medium hover:underline"
                           >
-                            Add Out Date
+                           Confirm
                           </button>
                         )}
                       </td>
@@ -301,18 +357,19 @@ const UutRecords = () => {
           <div className="px-4 py-3 border-t border-gray-200 flex items-center justify-between">
             <div className="text-sm text-gray-600">
               Showing {(currentPage - 1) * recordsPerPage + 1} to{" "}
-              {Math.min(currentPage * recordsPerPage, records.length)} of {records.length} records
+              {Math.min(currentPage * recordsPerPage, records.length)} of{" "}
+              {records.length} records
             </div>
-            
+
             <div className="flex items-center space-x-1">
               <button
-                onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
                 disabled={currentPage === 1}
                 className="px-3 py-1.5 text-sm border border-gray-300 rounded-md hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 Previous
               </button>
-              
+
               {[...Array(Math.min(totalPages, 5))].map((_, i) => {
                 const pageNum = i + 1;
                 return (
@@ -329,9 +386,11 @@ const UutRecords = () => {
                   </button>
                 );
               })}
-              
+
               <button
-                onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                onClick={() =>
+                  setCurrentPage((p) => Math.min(totalPages, p + 1))
+                }
                 disabled={currentPage === totalPages}
                 className="px-3 py-1.5 text-sm border border-gray-300 rounded-md hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed"
               >
@@ -341,54 +400,6 @@ const UutRecords = () => {
           </div>
         )}
       </div>
-
-      {showEditModal && editingRecord && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-lg max-w-md w-full p-6 shadow-xl">
-            <h2 className="text-lg font-semibold text-gray-900 mb-4">Add UUT Out Date</h2>
-            
-            <div className="mb-6 p-4 bg-indigo-50 rounded-lg border border-indigo-200">
-              <div className="text-xs font-medium text-indigo-700 uppercase tracking-wide mb-2">UUT Details</div>
-              <div className="space-y-2 text-sm">
-                <div><span className="font-medium text-gray-700">UUT Code:</span> <span className="font-mono">{editingRecord.uutCode}</span></div>
-                <div><span className="font-medium text-gray-700">Serial No:</span> {editingRecord.serialNo}</div>
-                <div><span className="font-medium text-gray-700">Customer:</span> {editingRecord.customerName}</div>
-              </div>
-            </div>
-
-            <div className="mb-6">
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Out Date <span className="text-red-500">*</span>
-              </label>
-              <input
-                type="date"
-                value={outDate}
-                onChange={(e) => setOutDate(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-200 focus:border-indigo-300"
-              />
-            </div>
-
-            <div className="flex gap-3">
-              <button
-                onClick={() => {
-                  setShowEditModal(false);
-                  setEditingRecord(null);
-                  setOutDate("");
-                }}
-                className="flex-1 px-4 py-2 text-sm border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={handleCheckout}
-                className="flex-1 px-4 py-2 text-sm bg-indigo-600 text-white rounded-md hover:bg-indigo-700"
-              >
-                Save
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 };
@@ -396,7 +407,9 @@ const UutRecords = () => {
 const StatCard = ({ label, value, icon, color }) => (
   <div className="bg-white border rounded-lg p-4 hover:shadow-sm transition-shadow">
     <div className="flex items-center gap-3">
-      <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${color}`}>
+      <div
+        className={`w-10 h-10 rounded-lg flex items-center justify-center ${color}`}
+      >
         <span className="text-lg">{icon}</span>
       </div>
       <div>
@@ -407,22 +420,26 @@ const StatCard = ({ label, value, icon, color }) => (
   </div>
 );
 
-const TableHeader = ({ children }) => (
-  <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
-    {children}
-  </th>
-);
-
 const StatusBadge = ({ status }) => {
   const config = {
-    'in-lab': { text: 'In Lab', bgColor: 'bg-indigo-100', textColor: 'text-indigo-700' },
-    'checked-out': { text: 'Checked Out', bgColor: 'bg-green-100', textColor: 'text-green-700' }
+    "in-lab": {
+      text: "In Lab",
+      bgColor: "bg-indigo-100",
+      textColor: "text-indigo-700",
+    },
+    "checked-out": {
+      text: "Checked Out",
+      bgColor: "bg-green-100",
+      textColor: "text-green-700",
+    },
   };
-  
-  const { text, bgColor, textColor } = config[status] || config['in-lab'];
-  
+
+  const { text, bgColor, textColor } = config[status] || config["in-lab"];
+
   return (
-    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${bgColor} ${textColor}`}>
+    <span
+      className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${bgColor} ${textColor}`}
+    >
       {text}
     </span>
   );
