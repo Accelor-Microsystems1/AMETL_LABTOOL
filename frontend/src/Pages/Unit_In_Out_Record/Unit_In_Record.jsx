@@ -212,7 +212,6 @@ const UutIn = () => {
         testTypeName: "CEMILAC",
         testTypeCode: "C",
         projectName: "",
-        uutDescription: "",
         uutType: "UT",
         uutSrNo: "",
       });      

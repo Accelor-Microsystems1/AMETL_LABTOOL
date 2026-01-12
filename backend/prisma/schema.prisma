@@ -7,52 +7,50 @@ datasource db {
 }
 
 enum Role {
-  HOD
-  MANAGER
   ADMIN
   USER
   VIEWER
-}
-
-model User {
-  id  String @id @default(uuid())
-  email String @unique
-  password String 
-  name String
-  role Role @default(VIEWER)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  HOD
+  MANAGER
 }
 
 enum UutType {
   AS
-  UT 
+  UT
   BB
 }
 
+model User {
+  id        String   @id @default(uuid())
+  email     String   @unique
+  password  String
+  name      String
+  role      Role     @default(VIEWER)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
 model UutRecord {
-  id String @id @default(uuid())
-  srNo Int?
-  traceId  String? @unique
-  serialNo String
-  challanNo String
-  uutInDate DateTime 
+  id           String   @id @default(uuid())
+  serialNo     String   @unique
+  challanNo    String
+  uutInDate    DateTime
   customerName String
   customerCode String
   testTypeName String
   testTypeCode String
-  projectName String
-  uutQty Int
-  uutType UutType
-  inDateDay DateTime
-  serialOfDay Int
-  uutCode String @unique
-  outs UutOut[]
-  
-
-  createdById String?
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  projectName  String
+  uutQty       Int
+  uutType      UutType
+  inDateDay    DateTime
+  serialOfDay  Int
+  uutCode      String   @unique
+  createdById  String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  srNo         Int?
+  traceId      String?  @unique
+  outs         UutOut[]
 
   @@unique([inDateDay, serialOfDay])
   @@index([uutInDate])
@@ -62,13 +60,12 @@ model UutRecord {
 }
 
 model UutOut {
-  id String @id @default(uuid())
+  id          String    @id @default(uuid())
   uutRecordId String
-  uutRecord UutRecord @relation(fields: [uutRecordId], references: [id])
-
-  outQty Int?
-  outDate DateTime?
-  remarks String?
-
-  createdAt DateTime @default(now())
+  outQty      Int?
+  outDate     DateTime?
+  remarks     String?
+  createdAt   DateTime  @default(now())
+  uutRecord   UutRecord @relation(fields: [uutRecordId], references: [id])
 }
+

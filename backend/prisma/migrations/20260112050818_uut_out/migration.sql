@@ -1,0 +1,3 @@
+-- AlterTable
+ALTER TABLE "UutOut" ALTER COLUMN "outQty" DROP NOT NULL,
+ALTER COLUMN "outDate" DROP NOT NULL;

@@ -1,103 +1,148 @@
 const {
-    generateCustomerCode,
-    getStartOfDay,
-    buildUutCode,
+  generateCustomerCode,
+  getStartOfDay,
+  buildUutCode,
 } = require('../../utils/uutCodeGenerator');
 
 const getAllRecords = (prisma) => async (req, res) => {
-    try {
-        const { search, customerName, projectName, status } = req.query;
-        const where = {};
-        if (search) {
-            where.OR = [
-                { serialNo: { contains: search, mode: 'insensitive' } },
-                { uutCode: { contains: search, mode: 'insensitive' } },
-                { customerName: { contains: search, mode: 'insensitive' } }
-            ];
-        }
-        if (customerName) {
-            where.customerName = { contains: customerName, mode: 'insensitive' };
-        }
-        if (projectName) {
-            where.projectName = { contains: projectName, mode: 'insensitive' };
-        }
+  try {
+    const { search, customerName, projectName, status } = req.query;
+    const where = {};
 
-        if (status === 'in') {
-            where.outDate = null;
-        } else if (status === 'out') {
-            where.outDate = { not: null };
-        }
-        const records = await prisma.uutRecord.findMany({
-            where, orderBy: { createdAt: 'desc' },
-            take: 100
-        });
-        res.json({
-            success: true,
-            count: records.length,
-            data: records
-        });
-    } catch (error) {
-        console.error('Error fetching records:', error);
-        res.status(500).json({
-            success: false,
-            error: error.message
-        });
+    if (search) {
+      where.OR = [
+        { serialNo: { contains: search, mode: 'insensitive' } },
+        { uutCode: { contains: search, mode: 'insensitive' } },
+        { customerName: { contains: search, mode: 'insensitive' } }
+      ];
     }
+    if (customerName) {
+      where.customerName = { contains: customerName, mode: 'insensitive' };
+    }
+    if (projectName) {
+      where.projectName = { contains: projectName, mode: 'insensitive' };
+    }
+
+    if (status === 'in') {
+      where.outs = { none: {} };
+    } else if (status === 'out') {
+      where.outs = { some: {} };
+    }
+
+    const records = await prisma.uutRecord.findMany({
+      where,
+      include: {
+        outs: {
+          orderBy: { outDate: 'desc' },
+          take: 1
+        }
+      },
+      orderBy: { createdAt: 'desc' },
+      take: 100
+    });
+
+    const formattedRecords = records.map(record => ({
+      ...record,
+      uutOutDate: record.outs.length > 0 ? record.outs[0].outDate : null,
+      outQty: record.outs.length > 0 ? record.outs[0].outQty : null,
+      remarks: record.outs.length > 0 ? record.outs[0].remarks : null,
+    }));
+
+    res.json({
+      success: true,
+      count: formattedRecords.length,
+      data: formattedRecords
+    });
+  } catch (error) {
+    console.error('Error fetching records:', error);
+    res.status(500).json({
+      success: false,
+      error: error.message
+    });
+  }
 };
 
 const getRecordById = (prisma) => async (req, res) => {
-    try {
-        const { id } = req.params;
-        const record = await prisma.uutRecord.findUnique({
-            where: { id }
-        });
-        if (!record) {
-            return res.status(404).json({
-                success: false,
-                error: 'Record not found'
-            });
+  try {
+    const { id } = req.params;
+    const record = await prisma.uutRecord.findUnique({
+      where: { id },
+      include: {
+        outs: {
+          orderBy: { outDate: 'desc' },
+          take: 1
         }
-        res.json({
-            success: true,
-            data: record
-        });
-    } catch (error) {
-        console.error('Error fetching record:', error);
-        res.status(500).json({
-            success: false,
-            error: error.message
-        });
+      }
+    });
+    if (!record) {
+      return res.status(404).json({
+        success: false,
+        error: 'Record not found'
+      });
     }
+
+    const formattedRecord = {
+      ...record,
+      uutOutDate: record.outs.length > 0 ? record.outs[0].outDate : null,
+      outQty: record.outs.length > 0 ? record.outs[0].outQty : null,
+      remarks: record.outs.length > 0 ? record.outs[0].remarks : null,
+    };
+
+    res.json({
+      success: true,
+      data: formattedRecord
+    });
+  } catch (error) {
+    console.error('Error fetching record:', error);
+    res.status(500).json({
+      success: false,
+      error: error.message
+    });
+  }
 };
 
 const getRecordByIdentifier = (prisma) => async (req, res) => {
-    try {
-        const { identifier } = req.params;
-        const record = await prisma.uutRecord.findFirst({
-            where: {
-                OR: [
-                    { serialNo: identifier },
-                    { uutCode: identifier }
-                ]
-            }
-        });
-        if (!record) {
-            return res.status(404).json({
-                success: false,
-                error: 'Record not found'
-            });
+  try {
+    const { identifier } = req.params;
+    const record = await prisma.uutRecord.findFirst({
+      where: {
+        OR: [
+          { serialNo: identifier },
+          { uutCode: identifier }
+        ]
+      },
+      include: {
+        outs: {
+          orderBy: { outDate: 'desc' },
+          take: 1
         }
-        res.json({
-            success: true,
-            data: record
-        });
-    } catch (error) {
-        console.error('Error fetching record:', error);
-        res.status(500).json({
-            success: false,
-            error: error.message
-        });
+      }
+    });
+    if (!record) {
+      return res.status(404).json({
+        success: false,
+        error: 'Record not found'
+      });
     }
+
+    const formattedRecord = {
+      ...record,
+      uutOutDate: record.outs.length > 0 ? record.outs[0].outDate : null,
+      outQty: record.outs.length > 0 ? record.outs[0].outQty : null,
+      remarks: record.outs.length > 0 ? record.outs[0].remarks : null,
+    };
+
+    res.json({
+      success: true,
+      data: formattedRecord
+    });
+  } catch (error) {
+    console.error('Error fetching record:', error);
+    res.status(500).json({
+      success: false,
+      error: error.message
+    });
+  }
 };
 
 const previewUutCode = (prisma) => async (req, res) => {
@@ -206,9 +251,7 @@ const createRecord = (prisma) => async (req, res) => {
       testTypeName,
       testTypeCode,
       projectName,
-      uutDescription,
       uutType,
-      uutSrNo,
       uutQty,
       expectedUutCode  
     } = req.body;
@@ -268,9 +311,7 @@ const createRecord = (prisma) => async (req, res) => {
               testTypeName,
               testTypeCode: testTypeCode.toUpperCase(),
               projectName,
-              uutDescription: uutDescription || null,
               uutType,
-              uutSrNo: uutSrNo || null,
               uutQty: Number(uutQty || 1),
               serialOfDay: nextSerialOfDay,
               uutCode,
@@ -376,7 +417,7 @@ const updateRecord = (prisma) => async (req, res) => {
 const checkoutRecord = (prisma) => async (req, res) => {
   try {
     const { id } = req.params;
-    const { outDate } = req.body;
+    const { outDate, outQty, remarks } = req.body;
 
     if (!outDate) {
       return res.status(400).json({
@@ -386,7 +427,8 @@ const checkoutRecord = (prisma) => async (req, res) => {
     }
 
     const record = await prisma.uutRecord.findUnique({
-      where: { id }
+      where: { id },
+      include: { outs: true }
     });
 
     if (!record) {
@@ -396,23 +438,30 @@ const checkoutRecord = (prisma) => async (req, res) => {
       });
     }
 
-    if (record.outDate) {
+    if (record.outs.length > 0) {
       return res.status(400).json({
         success: false,
         error: 'This unit has already been checked out'
       });
     }
 
-    const updated = await prisma.uutRecord.update({
-      where: { id },
+    const uutOut = await prisma.uutOut.create({
       data: {
-        outDate: new Date(outDate)
+        uutRecordId: record.id,
+        outDate: new Date(outDate),
+        outQty: outQty ? Number(outQty) : null,
+        remarks: remarks || null
       }
     });
 
     res.json({
       success: true,
-      data: updated,
+      data: {
+        ...record,
+        uutOutDate: uutOut.outDate,
+        outQty: uutOut.outQty,
+        remarks: uutOut.remarks
+      },
       message: 'UUT checked out successfully'
     });
   } catch (error) {
@@ -427,6 +476,9 @@ const checkoutRecord = (prisma) => async (req, res) => {
 const deleteRecord = (prisma) => async (req, res) => {
   try {
     const { id } = req.params;
+    await prisma.uutOut.deleteMany({
+      where: { uutRecordId: id }
+    });
 
     await prisma.uutRecord.delete({
       where: { id }
@@ -460,8 +512,8 @@ const getStats = (prisma) => async (req, res) => {
       todayRecords
     ] = await Promise.all([
       prisma.uutRecord.count(),
-      prisma.uutRecord.count({ where: { outDate: null } }),
-      prisma.uutRecord.count({ where: { outDate: { not: null } } }),
+      prisma.uutRecord.count({ where: { outs: { none: {} } } }),
+      prisma.uutRecord.count({ where: { outs: { some: {} } } }),
       prisma.uutRecord.count({
         where: {
           uutInDate: {
@@ -490,13 +542,13 @@ const getStats = (prisma) => async (req, res) => {
 };
 
 module.exports = {
-    getAllRecords,
-    getRecordById,
-    getRecordByIdentifier,
-    previewUutCode,
-    createRecord,
-    updateRecord,
-    checkoutRecord,
-    deleteRecord,
-    getStats,
-}
+  getAllRecords,
+  getRecordById,
+  getRecordByIdentifier,
+  previewUutCode,
+  createRecord,
+  updateRecord,
+  checkoutRecord,
+  deleteRecord,
+  getStats,
+};
