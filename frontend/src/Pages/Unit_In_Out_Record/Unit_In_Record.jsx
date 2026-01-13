@@ -103,11 +103,9 @@ const UutIn = () => {
 
     part = part.replace(/\s+to\s+/gi, "-");
 
-    // RANGE CASE
     if (part.includes("-")) {
       const [startRaw, endRaw] = part.split("-").map(p => p.trim());
 
-      // extract prefix + number from start
       const match = startRaw.match(/^(.*?)(\d+)$/);
       if (!match) continue;
 
@@ -115,7 +113,6 @@ const UutIn = () => {
       const startStr = match[2];
       const startNum = Number(startStr);
 
-      // end part: number only OR full serial
       const endMatch = endRaw.match(/(\d+)$/);
       const endNum = endMatch ? Number(endMatch[1]) : NaN;
 
@@ -127,7 +124,6 @@ const UutIn = () => {
         unique.add(prefix + i.toString().padStart(padLength, "0"));
       }
     }
-    // SINGLE SERIAL
     else {
       unique.add(part);
     }
