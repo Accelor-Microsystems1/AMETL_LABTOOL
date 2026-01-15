@@ -42,7 +42,6 @@ model UutRecord {
   projectName  String
   uutQty       Int
   uutType      UutType
-  inDateDay    DateTime
   serialOfDay  Int
   uutCode      String   @unique
   createdById  String?

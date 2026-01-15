@@ -18,7 +18,8 @@ const Header = () => {
   const navItems = useMemo(
     () => [
       { path: "/dashboard", label: "Dashboard", roles: ["HOD", "MANAGER", "ADMIN", "USER", "VIEWER"] },
-      { path: "/units", label: "Unit In/Out", roles: ["HOD", "MANAGER", "ADMIN", "USER"] },
+      { path: "/units", label: "Unit In/Out", roles: ["HOD", "MANAGER", "ADMIN",] },
+      { path: "/request_details", label: "Request Details", roles:["MANAGER","HOD","ADMIN", "USER"]},
       { path: "/list_of_employees", label: "List of Employees", roles: ["HOD"] },
     ],
     []

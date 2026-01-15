@@ -177,7 +177,8 @@ const UutIn = () => {
       const payload = {
         ...form,
         uutQty,
-        expectedUutCode: previewData.uutCode
+        expectedUutCode: previewData.uutCode,
+        uutInDate: new Date().toISOString()
       };
       const response = await fetch(`${API_BASE_URL}/uut-records`, {
         method: "POST",
