@@ -51,7 +51,7 @@ model UutRecord {
   traceId      String?  @unique
   outs         UutOut[]
 
-  @@unique([inDateDay, serialOfDay])
+  @@unique([uutInDate, serialOfDay])
   @@index([uutInDate])
   @@index([customerCode])
   @@index([projectName])
@@ -66,5 +66,9 @@ model UutOut {
   remarks     String?
   createdAt   DateTime  @default(now())
   uutRecord   UutRecord @relation(fields: [uutRecordId], references: [id])
+}
+
+model ControlNoRecord {
+  
 }
 
