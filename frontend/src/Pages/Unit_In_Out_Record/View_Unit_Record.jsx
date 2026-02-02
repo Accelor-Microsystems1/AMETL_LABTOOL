@@ -25,7 +25,7 @@ const UutRecords = () => {
   const [activeFilter, setActiveFilter] = useState("in-lab");
   const [currentPage, setCurrentPage] = useState(1);
   const recordsPerPage = 10;
-  const {formatDateTime } = useISTDate();
+  const { formatDateTime } = useISTDate();
 
   const [modalState, setModalState] = useState({
     checkout: false,
@@ -277,6 +277,7 @@ const UutRecords = () => {
               <table className="w-full text-sm">
                 <thead className="bg-gray-50 border-b border-gray-200">
                   <tr>
+                    <Th className="text-center w-16">Sr. No.</Th>
                     <Th>UUT Code</Th>
                     <Th>Challan No</Th>
                     <Th>Project / Serial</Th>
@@ -289,7 +290,9 @@ const UutRecords = () => {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-200">
-                  {paginatedRecords.map((record) => {
+                  {paginatedRecords.map((record, index) => {
+                    const serialNumber = (currentPage - 1) * recordsPerPage + index + 1;
+                    
                     const remaining = getRemainingQty(record);
                     const isComplete = remaining <= 0;
 
@@ -298,6 +301,10 @@ const UutRecords = () => {
                         key={record.id}
                         className="hover:bg-gray-50 transition"
                       >
+                        <Td className="text-center font-medium text-gray-600">
+                          {serialNumber}
+                        </Td>
+                        
                         <Td className="font-mono font-semibold">
                           {record.uutCode}
                         </Td>

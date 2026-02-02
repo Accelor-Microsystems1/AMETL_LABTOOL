@@ -1,5 +1,6 @@
 import React, { useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
+import { toast } from "sonner";
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
@@ -72,12 +73,12 @@ const UutIn = () => {
 
   const addCustomTestType = () => {
     if (!customTestName.trim() || !customTestCode.trim()) {
-      alert("Please enter both test name and code");
+      toast.error("Please enter both test name and code");
       return;
     }
     
     if (customTestCode.length !== 1) {
-      alert("Test code must be a single letter");
+      toast.error("Test code must be a single letter");
       return;
     }
 
@@ -134,11 +135,11 @@ const UutIn = () => {
 
   const handlePreview = async () => {
     if (!form.serialNo || !form.customerName || !form.testTypeName || !form.testTypeCode || !form.projectName) {
-      alert("Please fill all required fields");
+      toast.error("Please fill all required fields");
       return;
     }
      if(uutQty<=0) {
-      alert("Please fill  Serial No. correctly");
+      toast.error("Please fill  Serial No. correctly");
       return;
      }
     setLoading(true);

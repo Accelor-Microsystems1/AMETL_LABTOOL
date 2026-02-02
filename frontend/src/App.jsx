@@ -1,5 +1,6 @@
 import React from "react";
 import { Routes, Route, Navigate } from "react-router-dom";
+import { Toaster } from "./components/ui/sonner";
 import ProtectedRoute from "./components/ProtectedRoute";
 import Layout from "./components/authentication/layout";
 import Login from "./auth/Login";
@@ -12,6 +13,8 @@ import View_Request_No from "./Pages/Request_Details/View_Request_No";
 
 export default function App() {
   return (
+    <>
+    <Toaster position="bottom-center" richColors />
     <Routes>
       <Route path="/login" element={<Login />} />
 
@@ -29,5 +32,6 @@ export default function App() {
 
       <Route path="*" element={<Navigate to="/dashboard" replace />} />
     </Routes>
+    </>
   );
 }
