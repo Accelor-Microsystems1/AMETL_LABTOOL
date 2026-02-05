@@ -17,13 +17,38 @@ const Header = () => {
 
   const navItems = useMemo(
     () => [
-      { path: "/dashboard", label: "Dashboard", roles: ["HOD", "MANAGER", "ADMIN", "USER", "VIEWER"] },
-      { path: "/units", label: "Unit In/Out", roles: ["HOD", "MANAGER", "ADMIN",] },
-      { path: "/request_details", label: "Request Details", roles:["MANAGER","HOD","ADMIN", "USER"]},
-      { path: "/equipment_details", label: "Equipment Details", roles: ["MANAGER", "HOD", "USER"]},
-      { path: "/list_of_employees", label: "List of Employees", roles: ["HOD"] },
+      {
+        path: "/dashboard",
+        label: "Dashboard",
+        roles: ["HOD", "MANAGER", "ADMIN", "JUNIORENGINEER", "TESTENGINEER", "CUSTOMER", "CEO"],
+      },
+      {
+        path: "/units",
+        label: "Unit In/Out",
+        roles: ["HOD", "MANAGER", "ADMIN"],
+      },
+      {
+        path: "/request_details",
+        label: "Request Details",
+        roles: ["MANAGER", "HOD", "ADMIN", "TESTENGINEER"],
+      },
+      {
+        path: "/equipment_details",
+        label: "Equipment Details",
+        roles: ["MANAGER", "HOD", "TESTENGINEER"],
+      },
+      {
+        path: "/list_of_employees",
+        label: "List of Employees",
+        roles: ["HOD"],
+      },
+      {
+        path: "/request_form",
+        label: "Request Form",
+        roles: ["CUSTOMER"],
+      },
     ],
-    []
+    [],
   );
 
   const filteredNavItems = useMemo(() => {
@@ -44,7 +69,8 @@ const Header = () => {
 
   useEffect(() => {
     const onDocMouseDown = (e) => {
-      if (menuRef.current && !menuRef.current.contains(e.target)) setMenuOpen(false);
+      if (menuRef.current && !menuRef.current.contains(e.target))
+        setMenuOpen(false);
     };
     document.addEventListener("mousedown", onDocMouseDown);
     return () => document.removeEventListener("mousedown", onDocMouseDown);
@@ -77,14 +103,16 @@ const Header = () => {
           className={[
             "mt-3 flex items-center justify-between gap-3",
             "rounded-2xl border",
-            "bg-white/70 backdrop-blur-xl",
-            scrolled ? "shadow-md border-slate-200/70" : "shadow-sm border-white/40",
+            "bg-gray-800 backdrop-blur-xl",
+            scrolled
+              ? "shadow-md border-gray-900"
+              : "shadow-sm border-gray-900",
           ].join(" ")}
         >
           <div className="flex items-center gap-3 pl-4 py-3">
             <Link
               to="/dashboard"
-              className="font-semibold text-slate-900 tracking-tight text-base sm:text-lg"
+              className="font-semibold text-gray-200 tracking-tight text-base sm:text-lg"
             >
               LabTool
             </Link>
@@ -99,7 +127,7 @@ const Header = () => {
                   "px-4 py-2 rounded-xl text-sm font-medium transition-colors",
                   isActive(item.path)
                     ? "bg-slate-900 text-white"
-                    : "text-slate-700 hover:bg-slate-100 hover:text-slate-900",
+                    : "text-gray-200 hover:bg-slate-100 hover:text-slate-900",
                 ].join(" ")}
               >
                 {item.label}
@@ -111,35 +139,39 @@ const Header = () => {
             <button
               type="button"
               onClick={() => setMenuOpen((v) => !v)}
-              className="flex items-center gap-3 rounded-xl px-3 py-2 hover:bg-slate-100 transition-colors"
+              className="group flex items-center gap-3 rounded-xl px-3 py-2 hover:bg-gray-200 transition-colors"
               aria-label="Open menu"
               aria-expanded={menuOpen}
             >
-              <div className="flex h-9 w-9 items-center justify-center rounded-full bg-slate-900 text-white text-xs font-semibold">
+              <div className="flex h-9 w-9 items-center justify-center rounded-full bg-slate-900 text-white  text-xs font-semibold">
                 {initials}
               </div>
 
-              <div className="hidden sm:flex flex-col items-start leading-tight">
-                <span className="text-sm font-semibold text-slate-900 max-w-35 truncate">
+              <div className="hidden sm:flex flex-col items-start  leading-tight">
+                <span className="text-sm font-semibold text-slate-900 group-hover:text-slate-700  max-w-35  truncate">
                   {user?.name || user?.email}
                 </span>
-                <span className="text-xs text-slate-500 uppercase tracking-wide">
+                <span className="text-xs text-gray-200 group-hover:text-slate-700  uppercase tracking-wide">
                   {user.role}
                 </span>
               </div>
 
-              <span className="text-slate-500 text-sm">▾</span>
+              <span className="text-slate-500 group-hover:text-slate-700 text-sm">
+                ▾
+              </span>
             </button>
 
             {menuOpen && (
-              <div className="hidden lg:block absolute right-0 top-18 w-72 rounded-2xl border border-slate-200 bg-white/95 backdrop-blur-xl shadow-lg overflow-hidden">
-                <div className="px-4 py-3 border-b border-slate-100">
+              <div className="hidden lg:block absolute right-0 top-18 w-72 rounded-2xl border border-gray-900 bg-gray-800 backdrop-blur-xl shadow-lg overflow-hidden">
+                <div className="px-4 py-3 border-b border-gray-200">
                   <div className="text-sm font-semibold text-slate-900 truncate">
                     {user?.name || "User"}
                   </div>
-                  <div className="text-xs text-slate-500 truncate">{user?.email}</div>
+                  <div className="text-xs text-gray-200 truncate">
+                    {user?.email}
+                  </div>
                   <div className="mt-1">
-                    <span className="inline-flex items-center rounded-full bg-slate-100 px-2 py-0.5 text-[11px] font-semibold text-slate-700">
+                    <span className="inline-flex items-center rounded-full bg-gray-800 px-2 py-0.5 text-[11px] font-semibold text-gray-200">
                       {user.role}
                     </span>
                   </div>
@@ -155,7 +187,7 @@ const Header = () => {
                         "block rounded-xl px-3 py-2 text-sm font-medium transition-colors",
                         isActive(item.path)
                           ? "bg-slate-900 text-white"
-                          : "text-slate-700 hover:bg-slate-100",
+                          : "text-gray-200 hover:bg-gray-200 hover:text-gray-800",
                       ].join(" ")}
                     >
                       {item.label}
@@ -167,7 +199,7 @@ const Header = () => {
                   <button
                     type="button"
                     onClick={handleLogout}
-                    className="w-full text-left rounded-xl px-3 py-2 text-sm font-medium text-red-600 hover:bg-red-50"
+                    className="w-full text-left rounded-xl px-3 py-2 text-sm font-medium text-red-600 hover:bg-red-300"
                   >
                     Logout
                   </button>
@@ -190,7 +222,9 @@ const Header = () => {
               <div className="text-sm font-semibold text-slate-900 truncate">
                 {user?.name || "User"}
               </div>
-              <div className="text-xs text-slate-500 truncate">{user?.email}</div>
+              <div className="text-xs text-slate-500 truncate">
+                {user?.email}
+              </div>
             </div>
             <button
               className="rounded-lg px-3 py-2 hover:bg-slate-100"

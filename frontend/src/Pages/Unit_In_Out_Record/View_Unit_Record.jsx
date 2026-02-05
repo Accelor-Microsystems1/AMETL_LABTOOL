@@ -164,6 +164,7 @@ const UutRecords = () => {
     fetchRecords();
     fetchStats();
   };
+  
   const openModal = async (type, record) => {
     const freshRecord = await fetchSingleRecord(record.id);
     setModalState({
@@ -178,10 +179,10 @@ const UutRecords = () => {
   };
 
   return (
-    <div className="max-w-screen-2xl mx-auto px-6 py-8">
+    <div className="max-w-screen-2xl mx-auto bg-gray-900 px-6 py-8 ">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8">
         <div className="flex items-center gap-3">
-          <h1 className="text-2xl font-bold text-gray-900">Unit Tracker</h1>
+          <h1 className="text-2xl font-bold text-gray-200">Unit Tracker</h1>
           <button
             onClick={handleRefresh}
             className="p-2 rounded-lg bg-gray-100 hover:bg-gray-200 text-gray-600 transition"

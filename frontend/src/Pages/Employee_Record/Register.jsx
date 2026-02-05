@@ -3,7 +3,7 @@ import axios from 'axios';
 import { useAuth } from '../../components/authentication/authContext';
 
 function Register({onRegisterSuccess}) {
-  const [form, setForm] = useState({name:'', email: '', password: '', role:'VIEWER'});
+  const [form, setForm] = useState({name:'', email: '', password: '', role:'JUNIORENGINEER'});
   const [loading, setLoading] = useState(false);
   const user = useAuth();
 
@@ -19,7 +19,7 @@ function Register({onRegisterSuccess}) {
           Authorization: `Bearer ${token}`,
         },
       });
-      setForm({name: '', email:'', password:'', role: 'VIEWER'});
+      setForm({name: '', email:'', password:'', role: 'JUNIORENGINEER'});
       if (onRegisterSuccess) onRegisterSuccess();
       alert('User Registered successfully !');
     } catch (err) {
@@ -77,11 +77,13 @@ function Register({onRegisterSuccess}) {
             onChange={handleChange}
             className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 hover:border-blue-500 appearance-none"
           >
-            <option value="VIEWER">Viewer</option>
-            <option value="USER">User</option>
+            <option value="JUNIORENGINEER">Junior Engineer</option>
+            <option value="TESTENGINEER">Test Engineer</option>
             <option value="ADMIN">Admin Manager</option>
             <option value="MANAGER">Technical Manager</option>
             <option value="HOD">HOD</option>
+            <option value="CUSTOMER">Customer</option>
+            <option value="CEO">CEO</option>
           </select>
         </div>
           <button 

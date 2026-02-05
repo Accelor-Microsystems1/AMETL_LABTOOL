@@ -125,8 +125,10 @@ export const AuthProvider = ({ children }) => {
       isHod: role === "HOD",
       isManager: role === "MANAGER",
       isAdmin: role === "ADMIN",
-      isUser: role === "USER",
-      isViewer: role === "VIEWER",
+      isJuniorEngineer: role === "JUNIORENGINEER",
+      isTestEngineer: role === "TESTENGINEER",
+      isCustomer: role === "CUSTOMER",
+      isCEO: role === "CEO",
 
       hasRole: (...roles) => !!role && roles.includes(role),
     };
