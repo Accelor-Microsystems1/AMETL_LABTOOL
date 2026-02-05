@@ -14,7 +14,7 @@ const stepFields = {
     "unitName",
     "noOfUUT",
     "dimension",
-    "weight",
+    "weight", 
     "uutSerialNo",
     "repeatTest",
     "previousRefNo",
