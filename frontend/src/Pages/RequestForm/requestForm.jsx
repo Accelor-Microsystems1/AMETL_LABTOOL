@@ -4,25 +4,15 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { requestSchema } from "../../Schema/requestFormSchema";
 import TestRequestPreview from "../../components/customizedComponents/TestRequestPreview";
 
-/**
- * Function to calculate quantity from serial number range
- * Supports formats:
- * - "MB-667 to 705"
- * - "MB-667 to MB-705"
- * - "602-605"
- * - "m-6 - m-14"
- * - "ABC-001 to ABC-100"
- */
 const calculateQuantityFromSerial = (serialNo) => {
   if (!serialNo || typeof serialNo !== "string") return null;
 
   const trimmed = serialNo.trim();
   if (!trimmed) return null;
 
-  // Separators to try (in order of priority)
   const separators = [
-    /\s+to\s+/i, // " to " (case insensitive)
-    /\s+-\s+/, // " - " (with spaces around dash)
+    /\s+to\s+/i, 
+    /\s+-\s+/, 
   ];
 
   let parts = null;
@@ -34,9 +24,7 @@ const calculateQuantityFromSerial = (serialNo) => {
     }
   }
 
-  // If no separator found, try to match patterns without clear separator
   if (!parts) {
-    // Pattern: "prefix-startNum-endNum" like "MB-667-705"
     const prefixRangeMatch = trimmed.match(
       /^([a-zA-Z]+[-_]?)(\d+)\s*[-–]\s*(\d+)$/i
     );
@@ -48,7 +36,6 @@ const calculateQuantityFromSerial = (serialNo) => {
       }
     }
 
-    // Simple numeric range: "602-605" or "602 - 605"
     const simpleRangeMatch = trimmed.match(/^(\d+)\s*[-–]\s*(\d+)$/);
     if (simpleRangeMatch) {
       const start = parseInt(simpleRangeMatch[1], 10);
@@ -58,19 +45,16 @@ const calculateQuantityFromSerial = (serialNo) => {
       }
     }
 
-    // Single item (no range detected)
     return 1;
   }
 
   if (parts.length !== 2) return null;
 
-  // Extract numbers from each part
   const startNumbers = parts[0].match(/\d+/g);
   const endNumbers = parts[1].match(/\d+/g);
 
   if (!startNumbers || !endNumbers) return null;
 
-  // Get the last number from start and end parts
   const start = parseInt(startNumbers[startNumbers.length - 1], 10);
   const end = parseInt(endNumbers[endNumbers.length - 1], 10);
 
@@ -87,7 +71,7 @@ const stepFields = {
     "contactPerson",
     "contactNumber",
     "customerEmail",
-    "unitName",
+    "uutName",
     "noOfUUT",
     "dimension",
     "weight",
@@ -133,7 +117,6 @@ const RequestForm = () => {
   const testLevel = watch("testLevel");
   const uutSerialNo = watch("uutSerialNo");
 
-  // Auto-calculate quantity when serial number changes
   useEffect(() => {
     const quantity = calculateQuantityFromSerial(uutSerialNo);
     setCalculatedQuantity(quantity);
@@ -143,7 +126,6 @@ const RequestForm = () => {
     const valid = await trigger(stepFields[step], { shouldFocus: true });
     if (!valid) return;
 
-    // Include calculated quantity in saved data
     savedDataRef.current = {
       ...savedDataRef.current,
       ...getValues(),
@@ -165,53 +147,85 @@ const RequestForm = () => {
     setStep((prev) => prev - 1);
   };
 
-  const onSubmit = async () => {
-    const finalData = {
-      ...savedDataRef.current,
-      ...getValues(),
-      calculatedQuantity: calculatedQuantity,
-    };
 
-    console.log("Final submit:", finalData);
-
-    setIsSubmitting(true);
-    setSubmitStatus(null);
-
-    try {
-      const response = await fetch("http://localhost:5000/api/requests", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(finalData),
-      });
-
-      if (response.ok) {
-        setSubmitStatus("success");
-        savedDataRef.current = {};
-        setCalculatedQuantity(null);
-        reset();
-        setTimeout(() => {
-          setStep(1);
-          setSubmitStatus(null);
-        }, 2000);
-      } else {
-        setSubmitStatus("error");
-      }
-    } catch (error) {
-      console.error("Submit error:", error);
-      setSubmitStatus("error");
-    } finally {
-      setIsSubmitting(false);
-    }
+const onSubmit = async () => {
+  const formData = {
+    ...savedDataRef.current,
+    ...getValues(),
+    calculatedQuantity: calculatedQuantity,
   };
 
-  // Reusable Error Message Component
+  console.log("Final submit:", formData);
+
+  const backendData = {
+    companyName: formData.companyName,
+    companyAddress: formData.companyAddress,
+    contactPerson: formData.contactPerson,
+    contactNumber: formData.contactNumber,
+    customerEmail: formData.customerEmail,    
+    uutName: formData.uutName, 
+    noOfUUT: formData.noOfUUT,
+    dimension: formData.dimension,
+    weight: formData.weight,
+    uutSerialNo: formData.uutSerialNo,
+    calculatedQuantity: formData.calculatedQuantity,
+    repeatTest: formData.repeatTest,
+    previousRefNo: formData.previousRefNo || null,
+    testLevel: formData.testLevel === "Other" ? formData.otherTestLevel : formData.testLevel,
+    testName: formData.testName,
+    testSpecification: formData.testSpecification,
+    testStandard: formData.testStandard,
+    specialRequirement: formData.specialRequirement || null,
+    customerRepName: formData.customerRepName,
+    customerRepDate: formData.customerRepDate,
+    qaRepName: formData.qaRepName || null,
+    qaRepDate: formData.qaRepDate || null,
+  };
+
+  console.log("Backend data:", backendData);
+
+  setIsSubmitting(true);
+  setSubmitStatus(null);
+
+  try {
+    const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/test-requests`, {  // ✅ Updated endpoint
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(backendData), 
+    });
+
+    const result = await response.json();
+
+    if (response.ok) {
+      console.log("Success:", result);
+      setSubmitStatus("success");
+      savedDataRef.current = {};
+      setCalculatedQuantity(null);
+      reset();
+      setTimeout(() => {
+        setStep(1);
+        setSubmitStatus(null);
+      }, 2000);
+    } else {
+      console.error("Error response:", result);
+      setSubmitStatus("error");
+      alert(result.error || "Failed to submit form");
+    }
+  } catch (error) {
+    console.error("Submit error:", error);
+    setSubmitStatus("error");
+    alert("Network error: " + error.message);
+  } finally {
+    setIsSubmitting(false);
+  }
+};
+
   const ErrorMessage = ({ name }) => {
     return errors[name] ? (
       <p className="text-red-500 text-sm mt-1">{errors[name]?.message}</p>
     ) : null;
   };
 
-  // Step Indicator Component
   const StepIndicator = () => (
     <div className="flex items-center justify-center mb-6">
       {[1, 2, 3].map((s) => (
@@ -247,10 +261,8 @@ const RequestForm = () => {
           Test Request Form
         </h2>
 
-        {/* Step Indicator */}
         <StepIndicator />
 
-        {/* STEP 1 */}
         {step === 1 && (
           <>
             <h3 className="text-gray-200 font-semibold text-xl border-b border-gray-600 pb-2">
@@ -313,13 +325,13 @@ const RequestForm = () => {
             </h3>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div>
-                <label className="label text-gray-200">Unit Name</label>
+                <label className="label text-gray-200">UUT Name</label>
                 <input
-                  className={`input ${errors.unitName ? "border-red-500" : ""}`}
-                  placeholder="Unit name"
-                  {...register("unitName")}
+                  className={`input ${errors.uutName ? "border-red-500" : ""}`}
+                  placeholder="UUT name"
+                  {...register("uutName")}
                 />
-                <ErrorMessage name="unitName" />
+                <ErrorMessage name="uutName" />
               </div>
 
               <div>
@@ -495,7 +507,7 @@ const RequestForm = () => {
                   Test Specification
                 </label>
                 <textarea
-                  className={`input ${errors.testSpecification ? "border-red-500" : ""} min-h-[120px] resize-y`}
+                  className={`input ${errors.testSpecification ? "border-red-500" : ""} min-h-30 resize-y`}
                   placeholder="Test specification details..."
                   {...register("testSpecification")}
                 />
@@ -595,7 +607,6 @@ const RequestForm = () => {
           <span className="text-red-500">*</span> All fields are required
         </p>
 
-        {/* NAVIGATION BUTTONS */}
         <div className="flex justify-between pt-6 border-t border-gray-600">
           {step > 1 ? (
             <button
@@ -619,7 +630,8 @@ const RequestForm = () => {
             </button>
           ) : (
             <button
-              type="submit"
+              type="button"
+              onClick={handleSubmit(onSubmit)}
               disabled={isSubmitting}
               className={`btn-primary flex items-center gap-2 ${
                 isSubmitting ? "opacity-50 cursor-not-allowed" : ""

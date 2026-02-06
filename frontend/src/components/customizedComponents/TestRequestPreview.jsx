@@ -118,7 +118,7 @@ const TestRequestPreview = ({ formData }) => {
               UUT Name
             </p>
             <p className="p-2 w-[30%] border-r border-black">
-              {formData.unitName || "N/A"}
+              {formData.uutName || "N/A"}
             </p>
             <p className="border-r border-black p-2 font-semibold w-[20%] bg-gray-50">
               No. of UUT for Test

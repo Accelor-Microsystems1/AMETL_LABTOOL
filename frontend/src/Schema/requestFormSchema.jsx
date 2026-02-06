@@ -11,7 +11,7 @@ export const requestSchema = z.object({
     .max(10, "Contact number must be 10 digits")
     .regex(/^\d+$/, "Only numbers allowed"),
   customerEmail: z.string().email("Invalid email address"),
-  unitName: z.string().min(1, "Unit name is required"),
+  uutName: z.string().min(1, "Unit name is required"),
   noOfUUT: z.string().min(1, "Number of UUT is required"),
   dimension: z.string().min(1, "Dimension is required"),
   weight: z.string().min(1, "Weight is required"),
