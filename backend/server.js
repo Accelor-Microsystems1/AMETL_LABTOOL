@@ -10,9 +10,8 @@ const { PrismaPg } = require('@prisma/adapter-pg');
 // Import routes
 const { createAllEmployeesRouter } = require('./routers/User_Management/AllEmployees.routes');
 const { createAuthRouter } = require('./routers/User_Management/auth.routes');
-
-const {createUutRoutes} = require('./routers/UutRecords/uutRecord.Routes');
-const {createTestRequestRouter} = require('./routers/TestRequestAndProjectDetails/testRequest.Routes');
+const { createTestRequestRouter } = require('./routers/TestRequestAndProjectDetails/testRequest.Routes');
+const { createUutRoutes } = require('./routers/UutRecords/uutRecord.Routes');
 const createProjectRoutes = require('./routers/ProjectRoute/projectRoutes');
 const createTestRoutes = require('./routers/TestRoute/testRoutes'); // ← Check this path
 
