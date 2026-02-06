@@ -10,10 +10,7 @@ const calculateQuantityFromSerial = (serialNo) => {
   const trimmed = serialNo.trim();
   if (!trimmed) return null;
 
-  const separators = [
-    /\s+to\s+/i, 
-    /\s+-\s+/, 
-  ];
+  const separators = [/\s+to\s+/i, /\s+-\s+/];
 
   let parts = null;
 
@@ -26,7 +23,7 @@ const calculateQuantityFromSerial = (serialNo) => {
 
   if (!parts) {
     const prefixRangeMatch = trimmed.match(
-      /^([a-zA-Z]+[-_]?)(\d+)\s*[-–]\s*(\d+)$/i
+      /^([a-zA-Z]+[-_]?)(\d+)\s*[-–]\s*(\d+)$/i,
     );
     if (prefixRangeMatch) {
       const start = parseInt(prefixRangeMatch[2], 10);
@@ -111,7 +108,7 @@ const RequestForm = () => {
   } = useForm({
     resolver: zodResolver(requestSchema),
     mode: "onTouched",
-    shouldUnregister: true,
+    shouldUnregister: false,
   });
 
   const testLevel = watch("testLevel");
@@ -140,85 +137,114 @@ const RequestForm = () => {
     // Restore calculated quantity from saved data
     if (savedDataRef.current.uutSerialNo) {
       const quantity = calculateQuantityFromSerial(
-        savedDataRef.current.uutSerialNo
+        savedDataRef.current.uutSerialNo,
       );
       setCalculatedQuantity(quantity);
     }
     setStep((prev) => prev - 1);
   };
 
+  const onSubmit = async () => {
+    const formData = {
+      ...savedDataRef.current,
+      ...getValues(),
+      calculatedQuantity: calculatedQuantity,
+    };
 
-const onSubmit = async () => {
-  const formData = {
-    ...savedDataRef.current,
-    ...getValues(),
-    calculatedQuantity: calculatedQuantity,
-  };
+    console.log("Final submit:", formData);
 
-  console.log("Final submit:", formData);
+    const backendData = {
+      companyName: formData.companyName,
+      companyAddress: formData.companyAddress,
+      contactPerson: formData.contactPerson,
+      contactNumber: formData.contactNumber,
+      customerEmail: formData.customerEmail,
+      uutName: formData.uutName,
+      noOfUUT: formData.noOfUUT,
+      dimension: formData.dimension,
+      weight: formData.weight,
+      uutSerialNo: formData.uutSerialNo,
+      calculatedQuantity: formData.calculatedQuantity,
+      repeatTest: formData.repeatTest,
+      previousRefNo: formData.previousRefNo || null,
+      testLevel:
+        formData.testLevel === "Other"
+          ? formData.otherTestLevel
+          : formData.testLevel,
+      testName: formData.testName,
+      testSpecification: formData.testSpecification,
+      testStandard: formData.testStandard,
+      specialRequirement: formData.specialRequirement || null,
+      customerRepName: formData.customerRepName,
+      customerRepDate: formData.customerRepDate,
+      qaRepName: formData.qaRepName || null,
+      qaRepDate: formData.qaRepDate || null,
+    };
 
-  const backendData = {
-    companyName: formData.companyName,
-    companyAddress: formData.companyAddress,
-    contactPerson: formData.contactPerson,
-    contactNumber: formData.contactNumber,
-    customerEmail: formData.customerEmail,    
-    uutName: formData.uutName, 
-    noOfUUT: formData.noOfUUT,
-    dimension: formData.dimension,
-    weight: formData.weight,
-    uutSerialNo: formData.uutSerialNo,
-    calculatedQuantity: formData.calculatedQuantity,
-    repeatTest: formData.repeatTest,
-    previousRefNo: formData.previousRefNo || null,
-    testLevel: formData.testLevel === "Other" ? formData.otherTestLevel : formData.testLevel,
-    testName: formData.testName,
-    testSpecification: formData.testSpecification,
-    testStandard: formData.testStandard,
-    specialRequirement: formData.specialRequirement || null,
-    customerRepName: formData.customerRepName,
-    customerRepDate: formData.customerRepDate,
-    qaRepName: formData.qaRepName || null,
-    qaRepDate: formData.qaRepDate || null,
-  };
+    console.log("Backend data:", backendData);
 
-  console.log("Backend data:", backendData);
+    setIsSubmitting(true);
+    setSubmitStatus(null);
 
-  setIsSubmitting(true);
-  setSubmitStatus(null);
+    try {
+      const response = await fetch(
+        `${import.meta.env.VITE_API_BASE_URL}/test-requests`,
+        {
+          // ✅ Updated endpoint
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(backendData),
+        },
+      );
 
-  try {
-    const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/test-requests`, {  // ✅ Updated endpoint
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(backendData), 
-    });
+      const result = await response.json();
 
-    const result = await response.json();
-
-    if (response.ok) {
-      console.log("Success:", result);
-      setSubmitStatus("success");
-      savedDataRef.current = {};
-      setCalculatedQuantity(null);
-      reset();
-      setTimeout(() => {
-        setStep(1);
-        setSubmitStatus(null);
-      }, 2000);
-    } else {
-      console.error("Error response:", result);
+      if (response.ok) {
+        console.log("Success:", result);
+        setSubmitStatus("success");
+        savedDataRef.current = {};
+        setCalculatedQuantity(null);
+        reset({
+          companyName: "",
+          companyAddress: "",
+          contactPerson: "",
+          contactNumber: "",
+          customerEmail: "",
+          uutName: "",
+          noOfUUT: "",
+          dimension: "",
+          weight: "",
+          uutSerialNo: "",
+          repeatTest: "no",
+          previousRefNo: "",
+          testLevel: "Developmental",
+          otherTestLevel: "",
+          testName: "",
+          testSpecification: "",
+          testStandard: "",
+          specialRequirement: "",
+          customerRepName: "",
+          customerRepDate: "",
+          qaRepName: "",
+          qaRepDate: "",
+        });
+        setTimeout(() => {
+          setStep(1);
+          setSubmitStatus(null);
+        }, 2000);
+      } else {
+        console.error("Error response:", result);
+        setSubmitStatus("error");
+        alert(result.error || "Failed to submit form");
+      }
+    } catch (error) {
+      console.error("Submit error:", error);
       setSubmitStatus("error");
-      alert(result.error || "Failed to submit form");
+      alert("Network error: " + error.message);
+    } finally {
+      setIsSubmitting(false);
     }
-  } catch (error) {
-    console.error("Submit error:", error);
-    setSubmitStatus("error");
-    alert("Network error: " + error.message);
-  } finally {
-    setIsSubmitting(false);
-  }
-};
+  };
 
   const ErrorMessage = ({ name }) => {
     return errors[name] ? (
@@ -254,7 +280,7 @@ const onSubmit = async () => {
   return (
     <div className="min-h-screen bg-gray-900 flex items-center justify-center py-8 px-4">
       <form
-        onSubmit={handleSubmit(onSubmit)}
+        onSubmit={(e) => e.preventDefault()}
         className="bg-gray-800 p-8 rounded-lg w-full max-w-6xl space-y-6"
       >
         <h2 className="text-3xl text-center font-bold text-gray-200">
@@ -631,7 +657,7 @@ const onSubmit = async () => {
           ) : (
             <button
               type="button"
-              onClick={handleSubmit(onSubmit)}
+              onClick={onSubmit}
               disabled={isSubmitting}
               className={`btn-primary flex items-center gap-2 ${
                 isSubmitting ? "opacity-50 cursor-not-allowed" : ""
