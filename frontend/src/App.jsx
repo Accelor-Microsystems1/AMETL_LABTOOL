@@ -36,7 +36,7 @@ export default function App() {
             <Route path="/register" element={<RegisterEmployee />} />
             <Route path="/request_details" element={<View_Request_No />} />
             <Route path="/request_form" element={<RequestForm />} />
-          </Route>
+          </Route
         </Route>
 
         <Route path="*" element={<Navigate to="/dashboard" replace />} />
