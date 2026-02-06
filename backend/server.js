@@ -1,24 +1,17 @@
-// server.js
-
 require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
 const { PrismaClient } = require('@prisma/client');
 const { Pool } = require('pg');
 const { PrismaPg } = require('@prisma/adapter-pg');
-
-// Import routes
 const { createAllEmployeesRouter } = require('./routers/User_Management/AllEmployees.routes');
 const { createAuthRouter } = require('./routers/User_Management/auth.routes');
 const { createTestRequestRouter } = require('./routers/TestRequestAndProjectDetails/testRequest.Routes');
 const { createUutRoutes } = require('./routers/UutRecords/uutRecord.Routes');
 const createProjectRoutes = require('./routers/ProjectRoute/projectRoutes');
-const createTestRoutes = require('./routers/TestRoute/testRoutes'); // ← Check this path
-
-// Import middleware
+const createTestRoutes = require('./routers/TestRoute/testRoutes'); 
 const errorHandler = require('./middleware/errorHandler');
 
-// Database setup
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
 });
@@ -42,7 +35,7 @@ app.use('/api/uut-records', createUutRoutes(prisma));
 app.use('/api/test-requests', createTestRequestRouter(prisma));
 
 app.use('/api/admin/projects', createProjectRoutes(prisma));
-app.use('/api/admin/tests', createTestRoutes(prisma)); // ← Check this line
+app.use('/api/admin/tests', createTestRoutes(prisma)); 
 
 // Health check
 app.get('/health', (req, res) => {
