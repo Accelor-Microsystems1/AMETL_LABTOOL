@@ -76,41 +76,6 @@ model UutOut {
   uutRecord   UutRecord @relation(fields: [uutRecordId], references: [id])
 }
 
-model TestRequest {
-  id        Int      @id @default(autoincrement()) 
-  companyName    String
-  companyAddress String
-  contactPerson  String
-  contactNumber  String
-  customerEmail  String  
-  uutName           String
-  noOfUUT            String
-  dimension          String
-  weight             String
-  uutSerialNo        String
-  calculatedQuantity Int?
-  repeatTest         String   @default("no") 
-  previousRefNo      String?
-  testLevel          String 
-  testName           String
-  testSpecification  String   @db.Text
-  testStandard       String
-  specialRequirement String?  
-  customerRepName    String
-  customerRepDate    DateTime
-  qaRepName          String?
-  qaRepDate          DateTime?  
-  status            RequestStatus @default(PENDING)
-  referenceNumber   String?       @unique @default(uuid())
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt  
-  @@index([companyName])
-  @@index([customerEmail])
-  @@index([status])
-  @@index([createdAt])
-  @@index([testLevel])
-
-}
 model Project {
   id          Int             @id @default(autoincrement())
   projectName String          @unique @db.VarChar(100)
