@@ -1,8 +1,84 @@
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { requestSchema } from "../../Schema/requestFormSchema";
 import TestRequestPreview from "../../components/customizedComponents/TestRequestPreview";
+
+/**
+ * Function to calculate quantity from serial number range
+ * Supports formats:
+ * - "MB-667 to 705"
+ * - "MB-667 to MB-705"
+ * - "602-605"
+ * - "m-6 - m-14"
+ * - "ABC-001 to ABC-100"
+ */
+const calculateQuantityFromSerial = (serialNo) => {
+  if (!serialNo || typeof serialNo !== "string") return null;
+
+  const trimmed = serialNo.trim();
+  if (!trimmed) return null;
+
+  // Separators to try (in order of priority)
+  const separators = [
+    /\s+to\s+/i, // " to " (case insensitive)
+    /\s+-\s+/, // " - " (with spaces around dash)
+  ];
+
+  let parts = null;
+
+  for (const separator of separators) {
+    if (separator.test(trimmed)) {
+      parts = trimmed.split(separator);
+      break;
+    }
+  }
+
+  // If no separator found, try to match patterns without clear separator
+  if (!parts) {
+    // Pattern: "prefix-startNum-endNum" like "MB-667-705"
+    const prefixRangeMatch = trimmed.match(
+      /^([a-zA-Z]+[-_]?)(\d+)\s*[-–]\s*(\d+)$/i
+    );
+    if (prefixRangeMatch) {
+      const start = parseInt(prefixRangeMatch[2], 10);
+      const end = parseInt(prefixRangeMatch[3], 10);
+      if (!isNaN(start) && !isNaN(end) && end >= start) {
+        return end - start + 1;
+      }
+    }
+
+    // Simple numeric range: "602-605" or "602 - 605"
+    const simpleRangeMatch = trimmed.match(/^(\d+)\s*[-–]\s*(\d+)$/);
+    if (simpleRangeMatch) {
+      const start = parseInt(simpleRangeMatch[1], 10);
+      const end = parseInt(simpleRangeMatch[2], 10);
+      if (!isNaN(start) && !isNaN(end) && end >= start) {
+        return end - start + 1;
+      }
+    }
+
+    // Single item (no range detected)
+    return 1;
+  }
+
+  if (parts.length !== 2) return null;
+
+  // Extract numbers from each part
+  const startNumbers = parts[0].match(/\d+/g);
+  const endNumbers = parts[1].match(/\d+/g);
+
+  if (!startNumbers || !endNumbers) return null;
+
+  // Get the last number from start and end parts
+  const start = parseInt(startNumbers[startNumbers.length - 1], 10);
+  const end = parseInt(endNumbers[endNumbers.length - 1], 10);
+
+  if (isNaN(start) || isNaN(end)) return null;
+  if (end < start) return null;
+
+  return end - start + 1;
+};
 
 const stepFields = {
   1: [
@@ -33,10 +109,11 @@ const stepFields = {
   ],
 };
 
-const requestForm = () => {
+const RequestForm = () => {
   const [step, setStep] = useState(1);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitStatus, setSubmitStatus] = useState(null);
+  const [calculatedQuantity, setCalculatedQuantity] = useState(null);
   const savedDataRef = useRef({});
 
   const {
@@ -54,14 +131,23 @@ const requestForm = () => {
   });
 
   const testLevel = watch("testLevel");
+  const uutSerialNo = watch("uutSerialNo");
+
+  // Auto-calculate quantity when serial number changes
+  useEffect(() => {
+    const quantity = calculateQuantityFromSerial(uutSerialNo);
+    setCalculatedQuantity(quantity);
+  }, [uutSerialNo]);
 
   const nextStep = async () => {
     const valid = await trigger(stepFields[step], { shouldFocus: true });
     if (!valid) return;
 
+    // Include calculated quantity in saved data
     savedDataRef.current = {
       ...savedDataRef.current,
       ...getValues(),
+      calculatedQuantity: calculatedQuantity,
     };
 
     setStep((prev) => prev + 1);
@@ -69,6 +155,13 @@ const requestForm = () => {
 
   const prevStep = () => {
     reset(savedDataRef.current);
+    // Restore calculated quantity from saved data
+    if (savedDataRef.current.uutSerialNo) {
+      const quantity = calculateQuantityFromSerial(
+        savedDataRef.current.uutSerialNo
+      );
+      setCalculatedQuantity(quantity);
+    }
     setStep((prev) => prev - 1);
   };
 
@@ -76,6 +169,7 @@ const requestForm = () => {
     const finalData = {
       ...savedDataRef.current,
       ...getValues(),
+      calculatedQuantity: calculatedQuantity,
     };
 
     console.log("Final submit:", finalData);
@@ -93,6 +187,7 @@ const requestForm = () => {
       if (response.ok) {
         setSubmitStatus("success");
         savedDataRef.current = {};
+        setCalculatedQuantity(null);
         reset();
         setTimeout(() => {
           setStep(1);
@@ -134,9 +229,7 @@ const requestForm = () => {
           </div>
           {s < 3 && (
             <div
-              className={`w-16 h-1 ${
-                step > s ? "bg-green-500" : "bg-gray-600"
-              }`}
+              className={`w-16 h-1 ${step > s ? "bg-green-500" : "bg-gray-600"}`}
             />
           )}
         </React.Fragment>
@@ -263,10 +356,44 @@ const requestForm = () => {
                 <label className="label text-gray-200">UUT Serial No.</label>
                 <input
                   className={`input ${errors.uutSerialNo ? "border-red-500" : ""}`}
-                  placeholder="Serial number"
+                  placeholder="e.g., MB-667 to 705"
                   {...register("uutSerialNo")}
                 />
                 <ErrorMessage name="uutSerialNo" />
+                <p className="text-gray-400 text-xs mt-1">
+                  Formats: MB-667 to 705, 602-605, m-6 - m-14
+                </p>
+              </div>
+
+              {/* NEW: Calculated Quantity Field */}
+              <div>
+                <label className="label text-gray-200">Total Quantity</label>
+                <div className="relative">
+                  <input
+                    className={`input ${
+                      calculatedQuantity
+                        ? "bg-green-900/30 border-green-600"
+                        : "bg-gray-700"
+                    } cursor-not-allowed`}
+                    value={
+                      calculatedQuantity !== null
+                        ? `${calculatedQuantity} unit${calculatedQuantity > 1 ? "s" : ""}`
+                        : "Auto-calculated"
+                    }
+                    readOnly
+                    disabled
+                  />
+                  {calculatedQuantity !== null && (
+                    <span className="absolute right-3 top-1/2 -translate-y-1/2 text-green-400">
+                      ✓
+                    </span>
+                  )}
+                </div>
+                <p className="text-gray-400 text-xs mt-1">
+                  {calculatedQuantity === null && uutSerialNo
+                    ? "⚠️ Could not parse range"
+                    : "Calculated from serial range"}
+                </p>
               </div>
 
               <div>
@@ -465,12 +592,11 @@ const requestForm = () => {
         )}
 
         <p className="text-gray-400 text-sm italic">
-            <span className="text-red-500">*</span> All fields are required
-          </p>                                                                                                                                    
+          <span className="text-red-500">*</span> All fields are required
+        </p>
 
         {/* NAVIGATION BUTTONS */}
         <div className="flex justify-between pt-6 border-t border-gray-600">
-          
           {step > 1 ? (
             <button
               type="button"
@@ -482,8 +608,6 @@ const requestForm = () => {
           ) : (
             <div></div>
           )}
-
-          
 
           {step < 3 ? (
             <button
@@ -516,4 +640,4 @@ const requestForm = () => {
   );
 };
 
-export default requestForm;
+export default RequestForm;
