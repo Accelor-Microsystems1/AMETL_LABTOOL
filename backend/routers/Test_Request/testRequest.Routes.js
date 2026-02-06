@@ -4,7 +4,7 @@ const {
     getAllTestRequests,
     getTestRequestById,
     deleteTestRequest,
-} = require("../../controllers/TestRequestAndProjectDetails/testRequest.controller");
+} = require("../../controllers/Test_Request/testRequest.controller");
 
 function createTestRequestRouter(prisma) {
   const router = express.Router();
