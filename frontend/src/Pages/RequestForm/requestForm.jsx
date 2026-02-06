@@ -109,7 +109,7 @@ const stepFields = {
   ],
 };
 
-const requestForm = () => {
+const RequestForm = () => {
   const [step, setStep] = useState(1);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitStatus, setSubmitStatus] = useState(null);
@@ -123,7 +123,6 @@ const requestForm = () => {
     watch,
     reset,
     getValues,
-    setValue,
     formState: { errors },
   } = useForm({
     resolver: zodResolver(requestSchema),
@@ -641,5 +640,5 @@ const requestForm = () => {
   );
 };
 
-
+<<<<<<<<< Temporary merge branch 1
 export default RequestForm;
