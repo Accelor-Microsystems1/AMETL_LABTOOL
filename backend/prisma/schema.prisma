@@ -109,7 +109,7 @@ model ProjectTest {
   parameters    Json?
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @default(now())
-
+  
   // Relations
   project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
   test    Test    @relation(fields: [testId], references: [id], onDelete: Cascade)
