@@ -7,11 +7,13 @@ datasource db {
 }
 
 enum Role {
-  ADMIN
-  USER
-  VIEWER
   HOD
+  ADMIN
   MANAGER
+  TESTENGINEER
+  JUNIORENGINEER
+  CUSTOMER
+  CEO
 }
 
 enum UutType {
@@ -25,7 +27,7 @@ model User {
   email     String   @unique
   password  String
   name      String
-  role      Role     @default(VIEWER)
+  role      Role     @default(JUNIORENGINEER)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
@@ -67,44 +69,3 @@ model UutOut {
   createdAt   DateTime  @default(now())
   uutRecord   UutRecord @relation(fields: [uutRecordId], references: [id])
 }
-
-model ControlRecord {
-  id             String        @id @default(uuid())
-  controlNo      String        @unique 
-  uutRecordId    String
-  uutRecord      UutRecord     @relation(fields: [uutRecordId], references: [id])
-  projectName    String        
-  serialNo       String        
-  equipmentId    String?      
-  testTypeName   String
-  noOfSplits     Int           
-  testStartDate  DateTime      
-  createdAt      DateTime      @default(now())
-  updatedAt      DateTime      @updatedAt
-  splits         ControlSplit[]
-  @@index([controlNo])
-  @@index([uutRecordId])
-  @@index([testStartDate])
-}
-
-model ControlSplit {
-  id              String      @id @default(uuid())
-  controlRecordId String
-  controlRecord   ControlRecord @relation(fields: [controlRecordId], references: [id])
-  splitIndex      Int         
-  serialStart     String     
-  serialEnd       String    
-  testStart       DateTime
-  testEnd         DateTime?
-  createdAt       DateTime    @default(now())
-  updatedAt       DateTime    @updatedAt
-  @@unique([controlRecordId, splitIndex])
-  @@index([controlRecordId])
-}
-
-model EquipmentDetail {
-  id           String @id @default(uuid())
-  equipmentId  String @unique 
-  serialNo     String?
-}
-

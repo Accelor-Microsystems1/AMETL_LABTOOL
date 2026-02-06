@@ -13,7 +13,7 @@ const registerUser = (prisma) => async (req, res) => {
     }
     const hashedPassword = await bcrypt.hash(password, 10);
     const newUser = await prisma.User.create({
-      data: { email, password: hashedPassword, name, role: role || "VIEWER" },
+      data: { email, password: hashedPassword, name, role: role || "JUNIORENGINEER" },
     });
     res
       .status(201)
@@ -26,7 +26,7 @@ const registerUser = (prisma) => async (req, res) => {
 
 const loginUser = (prisma) => async (req, res) => {
   try {
-    const { email, password } = req.body;
+    const {email, password } = req.body;
     if (!email || !password) {
       return res
         .status(400)

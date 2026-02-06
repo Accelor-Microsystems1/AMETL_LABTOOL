@@ -9,6 +9,7 @@ const Login = () => {
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
   const { login } = useAuth();
   const navigate = useNavigate();
 
@@ -44,8 +45,9 @@ const Login = () => {
   };
 
   return (
-    <div className="min-h-screen bg-linear-to-br from-gray-50 to-gray-100 flex items-center justify-center p-4">
-      <div className="max-w-md w-full bg-white rounded-xl shadow-lg overflow-hidden">
+    <div className="relative min-h-screen  flex items-center justify-center p-4">
+      {/* Form */}
+      <div className="relative z-10 max-w-md w-full rounded-xl shadow-lg overflow-hidden border border-gray-700 bg-gray-900 backdrop-blur-sm">
         <div className="p-8">
           <div className="text-center mb-8">
             <img
@@ -58,10 +60,10 @@ const Login = () => {
                   "https://via.placeholder.com/120x48?text=Lab+Tool";
               }}
             />
-            <h2 className="text-2xl font-bold text-gray-800">
+            <h2 className="text-2xl font-bold text-gray-200">
               Lab Management System
             </h2>
-            <p className="text-gray-500 mt-1">Sign in to access your account</p>
+            <p className="text-gray-400 mt-1">Sign in to access your account</p>
           </div>
 
           {error && (
@@ -91,9 +93,9 @@ const Login = () => {
             <div>
               <label
                 htmlFor="email"
-                className="block text-sm font-medium text-gray-700"
+                className="block text-sm font-medium text-gray-200"
               >
-                Email Address
+                Email Address<span className="text-gray-200"> *</span>
               </label>
               <div className="mt-1">
                 <input
@@ -104,7 +106,7 @@ const Login = () => {
                   required
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  className="appearance-none block w-full px-3 py-3 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-primary-500 focus:border-primary-500 sm:text-sm"
+                  className="appearance-none block w-full px-3 py-3 border  text-white border-gray-700 rounded-md shadow-sm placeholder-gray-500 focus:outline-none focus:ring-gray-700 focus:border-gray-500 sm:text-sm"
                   placeholder="Enter your email"
                 />
               </div>
@@ -113,24 +115,68 @@ const Login = () => {
             <div>
               <label
                 htmlFor="password"
-                className="block text-sm font-medium text-gray-700"
+                className="block text-sm font-medium text-gray-200"
               >
-                Password
+                Password <span className="text-gray-200">*</span>
               </label>
-              <div className="mt-1">
+
+              <div className="mt-1 relative">
                 <input
                   id="password"
                   name="password"
-                  type="password"
+                  type={showPassword ? "text" : "password"}
                   autoComplete="current-password"
                   required
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="appearance-none block w-full px-3 py-3 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-primary-500 focus:border-primary-500 sm:text-sm"
+                  className="appearance-none block w-full px-3 py-3 pr-10 border text-white border-gray-700 rounded-md shadow-sm placeholder-gray-500 focus:outline-none focus:ring-gray-700 focus:border-gray-500 sm:text-sm"
                   placeholder="Enter your password"
                 />
+
+                
+                <button
+                  type="button"
+                  onClick={() => setShowPassword((prev) => !prev)}
+                  className="absolute inset-y-0 right-0 flex items-center pr-3 text-gray-400 hover:text-gray-200"
+                  tabIndex={-1}
+                >
+                  {showPassword ? (
+                   
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      className="h-5 w-5"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M13.875 18.825A10.05 10.05 0 0112 19c-5.523 0-10-4.477-10-10 0-1.02.153-2.005.438-2.93M15 12a3 3 0 11-6 0 3 3 0 016 0z"
+                      />
+                    </svg>
+                  ) : (
+                   
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      className="h-5 w-5"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M3 3l18 18M10.585 10.585A2 2 0 0012 14a2 2 0 001.414-.586M9.88 9.88A3 3 0 0115 12m7 0c-1.5 3.5-5.5 7-10 7a9.77 9.77 0 01-4.318-.98M2 12c1.5-3.5 5.5-7 10-7a9.77 9.77 0 014.318.98"
+                      />
+                    </svg>
+                  )}
+                </button>
               </div>
             </div>
+
             <div>
               <button
                 type="submit"
@@ -183,8 +229,8 @@ const Login = () => {
             </div>
           </div>
         </div>
-        <div className="bg-primary-50 px-8 py-4 text-center">
-          <p className="text-xs text-gray-600">
+        <div className="bg-gray-800 border-t border-gray-600 px-8 py-4 text-center">
+          <p className="text-xs text-gray-500">
             © {new Date().getFullYear()} Lab Tool. All rights reserved.
           </p>
         </div>

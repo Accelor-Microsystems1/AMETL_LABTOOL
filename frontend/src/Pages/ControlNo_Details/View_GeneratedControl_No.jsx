@@ -1,17 +1,16 @@
 import React from 'react'
 
-function Dashboard() {
+function View_Request_No() {
   return (
-    <>
+     <>
     <div className='bg-gray-950 h-full min-h-screen flex items-center justify-center'>
 
       <p className='text-white'>
-        Dashboard will be created Soon.... 
-        
+        View Generated Request Nos ....         
         </p>
     </div>
     </>
   )
 }
 
-export default Dashboard
+export default View_Request_No
