@@ -3,7 +3,7 @@
 // GET ALL TESTS
 const getAllTests = (prisma) => async (req, res) => {
   try {
-    const tests = await prisma.test.findMany({
+    const tests = await prisma.Test.findMany({
       orderBy: { testName: 'asc' },
       select: {
         id: true,
@@ -35,7 +35,7 @@ const createTest = (prisma) => async (req, res) => {
     const { testName } = req.body;
 
     // Check if test already exists
-    const existingTest = await prisma.test.findUnique({
+    const existingTest = await prisma.Test.findUnique({
       where: { testName: testName.trim() }
     });
 
@@ -46,7 +46,7 @@ const createTest = (prisma) => async (req, res) => {
       });
     }
 
-    const test = await prisma.test.create({
+    const test = await prisma.Test.create({
       data: {
         testName: testName.trim()
       }
@@ -72,7 +72,7 @@ const updateTest = (prisma) => async (req, res) => {
     const { id } = req.params;
     const { testName } = req.body;
 
-    const test = await prisma.test.update({
+    const test = await prisma.Test.update({
       where: { id: parseInt(id) },
       data: { testName: testName.trim() }
     });
@@ -108,7 +108,7 @@ const deleteTest = (prisma) => async (req, res) => {
       });
     }
 
-    await prisma.test.delete({
+    await prisma.Test.delete({
       where: { id: parseInt(id) }
     });
 

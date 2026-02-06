@@ -110,7 +110,7 @@ model TestRequest {
   @@index([createdAt])
   @@index([testLevel])
 
-
+}
 model Project {
   id          Int             @id @default(autoincrement())
   projectName String          @unique @db.VarChar(100)
