@@ -112,7 +112,7 @@ const RequestForm = () => {
   } = useForm({
     resolver: zodResolver(requestSchema),
     mode: "onTouched",
-    shouldUnregister: true,
+    shouldUnregister: false,
   });
 
   const testLevel = watch("testLevel");
@@ -631,8 +631,7 @@ const onSubmit = async () => {
             </button>
           ) : (
             <button
-              type="button"
-              onClick={handleSubmit(onSubmit)}
+              type="submit"
               disabled={isSubmitting}
               className={`btn-primary flex items-center gap-2 ${
                 isSubmitting ? "opacity-50 cursor-not-allowed" : ""
