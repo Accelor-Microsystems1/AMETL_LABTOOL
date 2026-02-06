@@ -109,7 +109,7 @@ const stepFields = {
   ],
 };
 
-const RequestForm = () => {
+const requestForm = () => {
   const [step, setStep] = useState(1);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitStatus, setSubmitStatus] = useState(null);
@@ -496,7 +496,7 @@ const RequestForm = () => {
                   Test Specification
                 </label>
                 <textarea
-                  className={`input ${errors.testSpecification ? "border-red-500" : ""} min-h-30 resize-y`}
+                  className={`input ${errors.testSpecification ? "border-red-500" : ""} min-h-[120px] resize-y`}
                   placeholder="Test specification details..."
                   {...register("testSpecification")}
                 />
@@ -640,5 +640,6 @@ const RequestForm = () => {
     </div>
   );
 };
+
 
 export default RequestForm;

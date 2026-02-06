@@ -76,6 +76,44 @@ model UutOut {
   uutRecord   UutRecord @relation(fields: [uutRecordId], references: [id])
 }
 
+model Project {
+  id          Int             @id @default(autoincrement())
+  projectName String          @unique @db.VarChar(100)
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @default(now())
+
+  // Relation
+  projectTests ProjectTest[]
+}
+
+
+model Test {
+  id          Int             @id @default(autoincrement())
+  testName    String          @unique @db.VarChar(100)
+  testCode    String?         @db.VarChar(50)
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @default(now())
+
+  // Relation
+  projectTests ProjectTest[]
+}
+
+model ProjectTest {
+  id            Int       @id @default(autoincrement())
+  projectId     Int
+  testId        Int
+  specification String
+  testStandard  String?   @db.VarChar(255)
+  parameters    Json?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @default(now())
+
+  // Relations
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  test    Test    @relation(fields: [testId], references: [id], onDelete: Cascade)
+
+  @@unique([projectId, testId]) // Optional: prevent duplicate project-test entries
+}
 model TestRequest {
   id        Int      @id @default(autoincrement()) 
   companyName    String
