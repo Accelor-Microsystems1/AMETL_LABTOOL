@@ -6,7 +6,8 @@ const { Pool } = require('pg');
 const { PrismaPg } = require('@prisma/adapter-pg');
 const { createAllEmployeesRouter } = require('./routers/User_Management/AllEmployees.routes');
 const { createAuthRouter } = require('./routers/User_Management/auth.routes');
-const { createTestRequestRouter } = require('./routers/Test_Request/testRequest.Routes');
+const createTestRequestRouter = require('./routers/Test_Request/testRequest.Routes');
+
 const { createUutRoutes } = require('./routers/UutRecords/uutRecord.Routes');
 const createProjectRoutes = require('./routers/ProjectRoute/projectRoutes');
 const createTestRoutes = require('./routers/TestRoute/testRoutes'); 
@@ -35,7 +36,7 @@ app.use('/api/uut-records', createUutRoutes(prisma));
 app.use('/api/test-requests', createTestRequestRouter(prisma));
 
 app.use('/api/admin/projects', createProjectRoutes(prisma));
-app.use('/api/admin/tests', createTestRoutes(prisma)); 
+app.use('/api/admin/tests', createTestRoutes(prisma));
 
 // Health check
 app.get('/health', (req, res) => {

@@ -4,6 +4,8 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { requestSchema } from "../../Schema/requestFormSchema";
 import TestRequestPreview from "../../components/customizedComponents/TestRequestPreview";
 
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
+
 const calculateQuantityFromSerial = (serialNo) => {
   if (!serialNo || typeof serialNo !== "string") return null;
 
@@ -23,7 +25,7 @@ const calculateQuantityFromSerial = (serialNo) => {
 
   if (!parts) {
     const prefixRangeMatch = trimmed.match(
-      /^([a-zA-Z]+[-_]?)(\d+)\s*[-–]\s*(\d+)$/i,
+      /^([a-zA-Z]+[-_]?)(\d+)\s*[-–]\s*(\d+)$/i
     );
     if (prefixRangeMatch) {
       const start = parseInt(prefixRangeMatch[2], 10);
@@ -91,19 +93,36 @@ const stepFields = {
 };
 
 const RequestForm = () => {
+  // ============================================
+  // FORM STATES
+  // ============================================
   const [step, setStep] = useState(1);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitStatus, setSubmitStatus] = useState(null);
   const [calculatedQuantity, setCalculatedQuantity] = useState(null);
   const savedDataRef = useRef({});
 
+  // ============================================
+  // PROJECT & TEST DROPDOWN STATES
+  // ============================================
+  const [projects, setProjects] = useState([]);
+  const [projectTests, setProjectTests] = useState([]);
+  const [selectedProjectId, setSelectedProjectId] = useState("");
+  const [selectedProjectTestId, setSelectedProjectTestId] = useState("");
+  const [isLoadingProjects, setIsLoadingProjects] = useState(false);
+  const [isLoadingTests, setIsLoadingTests] = useState(false);
+  const [isLoadingSpec, setIsLoadingSpec] = useState(false);
+
+  // ============================================
+  // REACT HOOK FORM
+  // ============================================
   const {
     register,
-    handleSubmit,
     trigger,
     watch,
     reset,
     getValues,
+    setValue,
     formState: { errors },
   } = useForm({
     resolver: zodResolver(requestSchema),
@@ -114,36 +133,197 @@ const RequestForm = () => {
   const testLevel = watch("testLevel");
   const uutSerialNo = watch("uutSerialNo");
 
+  // ============================================
+  // CALCULATE QUANTITY FROM SERIAL
+  // ============================================
   useEffect(() => {
     const quantity = calculateQuantityFromSerial(uutSerialNo);
     setCalculatedQuantity(quantity);
   }, [uutSerialNo]);
 
+  // ============================================
+  // FETCH PROJECTS ON COMPONENT MOUNT
+  // ============================================
+  useEffect(() => {
+    fetchProjects();
+  }, []);
+
+  const fetchProjects = async () => {
+    setIsLoadingProjects(true);
+    try {
+      const response = await fetch(`${API_BASE_URL}/admin/projects`);
+      const result = await response.json();
+
+      if (result.success) {
+        setProjects(result.data);
+        console.log("Projects loaded:", result.data);
+      }
+    } catch (error) {
+      console.error("Error fetching projects:", error);
+    } finally {
+      setIsLoadingProjects(false);
+    }
+  };
+
+  // ============================================
+  // FETCH TESTS FOR SELECTED PROJECT
+  // ============================================
+  const fetchProjectTests = async (projectId) => {
+    if (!projectId) return;
+
+    setIsLoadingTests(true);
+    setProjectTests([]);
+    setSelectedProjectTestId("");
+    setValue("testName", "");
+    setValue("testSpecification", "");
+
+    try {
+      const response = await fetch(
+        `${API_BASE_URL}/admin/projects/${projectId}/tests`
+      );
+      const result = await response.json();
+
+      if (result.success) {
+        setProjectTests(result.data);
+        console.log("Tests loaded:", result.data);
+      }
+    } catch (error) {
+      console.error("Error fetching tests:", error);
+    } finally {
+      setIsLoadingTests(false);
+    }
+  };
+
+  // ============================================
+  // FETCH SPECIFICATION FOR SELECTED TEST
+  // ============================================
+  const fetchSpecification = async (projectTestId) => {
+    if (!projectTestId) return;
+
+    setIsLoadingSpec(true);
+    try {
+      const response = await fetch(
+        `${API_BASE_URL}/admin/projects/specification/${projectTestId}`
+      );
+      const result = await response.json();
+
+      if (result.success) {
+        setValue("testSpecification", result.data.specification || "");
+        console.log("Specification loaded:", result.data.specification);
+      }
+    } catch (error) {
+      console.error("Error fetching specification:", error);
+    } finally {
+      setIsLoadingSpec(false);
+    }
+  };
+
+  // ============================================
+  // HANDLE PROJECT SELECTION (Step 1)
+  // ============================================
+  const handleProjectChange = (e) => {
+    const projectId = e.target.value;
+    console.log("Project selected:", projectId);
+
+    setSelectedProjectId(projectId);
+
+    // Find project and set uutName
+    const project = projects.find((p) => p.id === parseInt(projectId));
+    if (project) {
+      setValue("uutName", project.projectName);
+      console.log("UUT Name set to:", project.projectName);
+    } else {
+      setValue("uutName", "");
+    }
+
+    // Reset test selections when project changes
+    setSelectedProjectTestId("");
+    setProjectTests([]);
+    setValue("testName", "");
+    setValue("testSpecification", "");
+  };
+
+  // ============================================
+  // HANDLE TEST SELECTION (Step 2)
+  // ============================================
+  const handleTestChange = (e) => {
+    const projectTestId = e.target.value;
+    console.log("Test selected:", projectTestId);
+
+    setSelectedProjectTestId(projectTestId);
+
+    // Find test and set testName
+    const projectTest = projectTests.find(
+      (pt) => pt.id === parseInt(projectTestId)
+    );
+    if (projectTest) {
+      setValue("testName", projectTest.test.testName);
+      console.log("Test Name set to:", projectTest.test.testName);
+
+      // Fetch specification for this test
+      fetchSpecification(projectTestId);
+    } else {
+      setValue("testName", "");
+      setValue("testSpecification", "");
+    }
+  };
+
+  // ============================================
+  // NEXT STEP
+  // ============================================
   const nextStep = async () => {
     const valid = await trigger(stepFields[step], { shouldFocus: true });
     if (!valid) return;
 
+    // When going from Step 1 to Step 2, fetch tests
+    if (step === 1 && selectedProjectId) {
+      console.log("Fetching tests for project:", selectedProjectId);
+      await fetchProjectTests(selectedProjectId);
+    }
+
+    // Save current form data
     savedDataRef.current = {
       ...savedDataRef.current,
       ...getValues(),
       calculatedQuantity: calculatedQuantity,
+      selectedProjectId: selectedProjectId,
+      selectedProjectTestId: selectedProjectTestId,
     };
+
+    console.log("Saved data:", savedDataRef.current);
 
     setStep((prev) => prev + 1);
   };
 
+  // ============================================
+  // PREVIOUS STEP
+  // ============================================
   const prevStep = () => {
+    // Restore saved data
     reset(savedDataRef.current);
-    // Restore calculated quantity from saved data
+
+    // Restore calculated quantity
     if (savedDataRef.current.uutSerialNo) {
       const quantity = calculateQuantityFromSerial(
-        savedDataRef.current.uutSerialNo,
+        savedDataRef.current.uutSerialNo
       );
       setCalculatedQuantity(quantity);
     }
+
+    // Restore selected IDs
+    if (savedDataRef.current.selectedProjectId) {
+      setSelectedProjectId(savedDataRef.current.selectedProjectId);
+    }
+    if (savedDataRef.current.selectedProjectTestId) {
+      setSelectedProjectTestId(savedDataRef.current.selectedProjectTestId);
+    }
+
     setStep((prev) => prev - 1);
   };
 
+  // ============================================
+  // SUBMIT FORM
+  // ============================================
   const onSubmit = async () => {
     const formData = {
       ...savedDataRef.current,
@@ -153,6 +333,7 @@ const RequestForm = () => {
 
     console.log("Final submit:", formData);
 
+    // ✅ REMOVED projectId and projectTestId - Backend doesn't support them
     const backendData = {
       companyName: formData.companyName,
       companyAddress: formData.companyAddress,
@@ -173,7 +354,7 @@ const RequestForm = () => {
           : formData.testLevel,
       testName: formData.testName,
       testSpecification: formData.testSpecification,
-      testStandard: formData.testStandard,
+      testStandard: formData.testStandard || null,
       specialRequirement: formData.specialRequirement || null,
       customerRepName: formData.customerRepName,
       customerRepDate: formData.customerRepDate,
@@ -187,23 +368,25 @@ const RequestForm = () => {
     setSubmitStatus(null);
 
     try {
-      const response = await fetch(
-        `${import.meta.env.VITE_API_BASE_URL}/test-requests`,
-        {
-          // ✅ Updated endpoint
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(backendData),
-        },
-      );
+      const response = await fetch(`${API_BASE_URL}/test-requests`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(backendData),
+      });
 
       const result = await response.json();
 
       if (response.ok) {
         console.log("Success:", result);
         setSubmitStatus("success");
+
+        // Reset everything
         savedDataRef.current = {};
         setCalculatedQuantity(null);
+        setSelectedProjectId("");
+        setSelectedProjectTestId("");
+        setProjectTests([]);
+
         reset({
           companyName: "",
           companyAddress: "",
@@ -228,6 +411,7 @@ const RequestForm = () => {
           qaRepName: "",
           qaRepDate: "",
         });
+
         setTimeout(() => {
           setStep(1);
           setSubmitStatus(null);
@@ -246,12 +430,18 @@ const RequestForm = () => {
     }
   };
 
+  // ============================================
+  // ERROR MESSAGE COMPONENT
+  // ============================================
   const ErrorMessage = ({ name }) => {
     return errors[name] ? (
       <p className="text-red-500 text-sm mt-1">{errors[name]?.message}</p>
     ) : null;
   };
 
+  // ============================================
+  // STEP INDICATOR COMPONENT
+  // ============================================
   const StepIndicator = () => (
     <div className="flex items-center justify-center mb-6">
       {[1, 2, 3].map((s) => (
@@ -277,6 +467,9 @@ const RequestForm = () => {
     </div>
   );
 
+  // ============================================
+  // RENDER
+  // ============================================
   return (
     <div className="min-h-screen bg-gray-900 flex items-center justify-center py-8 px-4">
       <form
@@ -289,6 +482,9 @@ const RequestForm = () => {
 
         <StepIndicator />
 
+        {/* ============================================ */}
+        {/* STEP 1: Customer & UUT Details */}
+        {/* ============================================ */}
         {step === 1 && (
           <>
             <h3 className="text-gray-200 font-semibold text-xl border-b border-gray-600 pb-2">
@@ -350,13 +546,30 @@ const RequestForm = () => {
               Details of Unit Under Test (UUT)
             </h3>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              {/* UUT Name - Project Dropdown */}
               <div>
-                <label className="label text-gray-200">UUT Name</label>
-                <input
+                <label className="label text-gray-200">
+                  UUT Name (Project)
+                </label>
+                <select
                   className={`input ${errors.uutName ? "border-red-500" : ""}`}
-                  placeholder="UUT name"
-                  {...register("uutName")}
-                />
+                  value={selectedProjectId}
+                  onChange={handleProjectChange}
+                  disabled={isLoadingProjects}
+                >
+                  <option value="">
+                    {isLoadingProjects
+                      ? "Loading projects..."
+                      : "Select Project"}
+                  </option>
+                  {projects.map((project) => (
+                    <option key={project.id} value={project.id}>
+                      {project.projectName}
+                    </option>
+                  ))}
+                </select>
+                {/* Hidden input for form validation */}
+                <input type="hidden" {...register("uutName")} />
                 <ErrorMessage name="uutName" />
               </div>
 
@@ -403,7 +616,7 @@ const RequestForm = () => {
                 </p>
               </div>
 
-              {/* NEW: Calculated Quantity Field */}
+              {/* Calculated Quantity Field */}
               <div>
                 <label className="label text-gray-200">Total Quantity</label>
                 <div className="relative">
@@ -489,33 +702,54 @@ const RequestForm = () => {
           </>
         )}
 
-        {/* STEP 2 */}
+        {/* ============================================ */}
+        {/* STEP 2: Test Details */}
+        {/* ============================================ */}
         {step === 2 && (
           <>
             <h3 className="text-gray-200 font-semibold text-xl border-b border-gray-600 pb-2">
               Test Name and Specification
             </h3>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              {/* Test Name Dropdown */}
               <div>
                 <label className="label text-gray-200">Test Name</label>
-                <input
+                <select
                   className={`input ${errors.testName ? "border-red-500" : ""}`}
-                  placeholder="Test name"
-                  {...register("testName")}
-                />
+                  value={selectedProjectTestId}
+                  onChange={handleTestChange}
+                  disabled={isLoadingTests}
+                >
+                  <option value="">
+                    {isLoadingTests
+                      ? "Loading tests..."
+                      : projectTests.length === 0
+                        ? "No tests available"
+                        : "Select Test"}
+                  </option>
+                  {projectTests.map((projectTest) => (
+                    <option key={projectTest.id} value={projectTest.id}>
+                      {projectTest.test?.testName || "Unknown Test"}
+                    </option>
+                  ))}
+                </select>
+                {/* Hidden input for form validation */}
+                <input type="hidden" {...register("testName")} />
                 <ErrorMessage name="testName" />
               </div>
 
+              {/* Test Standard */}
               <div>
                 <label className="label text-gray-200">Test Standard</label>
                 <input
                   className={`input ${errors.testStandard ? "border-red-500" : ""}`}
-                  placeholder="Standard reference"
+                  placeholder="e.g., MIL-STD-810G"
                   {...register("testStandard")}
                 />
                 <ErrorMessage name="testStandard" />
               </div>
 
+              {/* Special Requirement */}
               <div>
                 <label className="label text-gray-200">
                   Special Requirement
@@ -528,19 +762,30 @@ const RequestForm = () => {
                 <ErrorMessage name="specialRequirement" />
               </div>
 
+              {/* Test Specification - Auto-filled */}
               <div className="md:col-span-3">
                 <label className="label text-gray-200">
                   Test Specification
+                  {isLoadingSpec && (
+                    <span className="ml-2 text-blue-400 text-sm">
+                      (Loading...)
+                    </span>
+                  )}
                 </label>
                 <textarea
-                  className={`input ${errors.testSpecification ? "border-red-500" : ""} min-h-30 resize-y`}
-                  placeholder="Test specification details..."
+                  className={`input ${errors.testSpecification ? "border-red-500" : ""} min-h-[120px] resize-y bg-gray-600`}
+                  placeholder="Auto-filled when test is selected"
+                  
                   {...register("testSpecification")}
                 />
                 <ErrorMessage name="testSpecification" />
+                <p className="text-gray-400 text-xs mt-1">
+                  ℹ️ Specification is auto-filled based on selected test
+                </p>
               </div>
             </div>
 
+            {/* Representatives Section */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-6">
               {/* Customer Representative */}
               <div className="flex flex-col md:col-start-1 bg-gray-700 p-4 rounded-lg">
@@ -601,7 +846,9 @@ const RequestForm = () => {
           </>
         )}
 
-        {/* STEP 3 - PREVIEW */}
+        {/* ============================================ */}
+        {/* STEP 3: Preview */}
+        {/* ============================================ */}
         {step === 3 && (
           <>
             <h3 className="text-gray-200 font-semibold text-xl border-b border-gray-600 pb-2">
@@ -633,6 +880,9 @@ const RequestForm = () => {
           <span className="text-red-500">*</span> All fields are required
         </p>
 
+        {/* ============================================ */}
+        {/* Navigation Buttons */}
+        {/* ============================================ */}
         <div className="flex justify-between pt-6 border-t border-gray-600">
           {step > 1 ? (
             <button
@@ -677,6 +927,5 @@ const RequestForm = () => {
     </div>
   );
 };
-
 
 export default RequestForm;

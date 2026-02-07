@@ -1,17 +1,33 @@
-const express = require("express");
-const {
-  createTestRequest,
-    getAllTestRequests,
-    getTestRequestById,
-    deleteTestRequest,
-} = require("../../controllers/Test_Request/testRequest.controller");
+// routers/TestRequest/testRequestRoutes.js
 
-function createTestRequestRouter(prisma) {
+const express = require('express');
+const {
+  getAllRequests,
+  getRequestsByCustomer,
+  getRequestById,
+  updateRequestStatus,
+  createTestRequest
+} = require('../../controllers/Test_Request/testRequest.controller');
+
+const createTestRequestRoutes = (prisma) => {
   const router = express.Router();
-  router.post("/", createTestRequest(prisma));
-  router.get("/", getAllTestRequests(prisma));
-  router.get("/:id", getTestRequestById(prisma));
-  router.delete("/:id", deleteTestRequest(prisma));
+
+  // Get all requests (HOD dashboard)
+  router.get('/', getAllRequests(prisma));
+
+  // Get requests by customer email
+  router.get('/customer/:email', getRequestsByCustomer(prisma));
+
+  // Get single request by ID
+  router.get('/:id', getRequestById(prisma));
+
+  // Create new request
+  router.post('/', createTestRequest(prisma));
+
+  // Update request status (Approve/Reject)
+  router.patch('/:id/status', updateRequestStatus(prisma));
+
   return router;
-}
-module.exports = { createTestRequestRouter };
+};
+
+module.exports = createTestRequestRoutes;

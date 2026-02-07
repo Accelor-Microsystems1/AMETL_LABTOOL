@@ -13,6 +13,8 @@ import RegisterEmployee from "./Pages/Employee_Record/Register";
 import View_Request_No from "./Pages/ControlNo_Details/View_GeneratedControl_No";
 import RequestForm from "./Pages/RequestForm/requestForm";
 import CreateProject from "./Pages/CreateProject/CreateProject";
+import RequestFormView from "./Pages/RequestForm/RequestFormView";
+import CustomerDashboard from "./Pages/RequestForm/CustomerDashboard";
 
 export default function App() {
   return (
@@ -35,9 +37,11 @@ export default function App() {
             <Route path="/units/in" element={<UutIn />} />
             <Route path="/list_of_employees" element={<List_Of_Employees />} />
             <Route path="/register" element={<RegisterEmployee />} />
-            <Route path="/request_details" element={<View_Request_No />} />
+            <Route path="/control_number" element={<View_Request_No />} />
             <Route path="/request_form" element={<RequestForm />} />
             <Route path="/createProject" element={<CreateProject />} />
+            <Route path="/request_form_view" element={<RequestFormView/>} />
+            <Route path="/customer-dashboard" element={<CustomerDashboard/>} />
           </Route>
         </Route>
 
