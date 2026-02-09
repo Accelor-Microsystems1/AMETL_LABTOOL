@@ -74,7 +74,6 @@ const createIncident = (prisma) => async (req, res, next) => {
       correctiveActionTaken,
       presentStatus,
       statusDate,
-      createdBy
     } = req.body;
 
     if (!dateOfFailure || !typesOfProblemsObserved || !causesOfFailures || !correctiveActionTaken || !presentStatus || !statusDate) {
@@ -115,7 +114,6 @@ const createIncident = (prisma) => async (req, res, next) => {
         correctiveActionTaken,
         presentStatus,
         statusDate: new Date(statusDate),
-        createdBy: createdBy || null
       }
     });
 

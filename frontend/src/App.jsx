@@ -15,6 +15,8 @@ import RequestForm from "./Pages/RequestForm/requestForm";
 import CreateProject from "./Pages/CreateProject/CreateProject";
 import RequestFormView from "./Pages/RequestForm/RequestFormView";
 import CustomerDashboard from "./Pages/RequestForm/CustomerDashboard";
+import EquipmentListPage from "./Pages/Equipment_Details/EquipmentListPage";
+import EquipmentDetail from "./Pages/Equipment_Details/EquipmentDetail";
 
 export default function App() {
   return (
@@ -42,6 +44,8 @@ export default function App() {
             <Route path="/createProject" element={<CreateProject />} />
             <Route path="/request_form_view" element={<RequestFormView/>} />
             <Route path="/customer-dashboard" element={<CustomerDashboard/>} />
+            <Route path="/equipment" element={<EquipmentListPage />} />
+            <Route path="/equipment/:id" element={<EquipmentDetail />} />
           </Route>
         </Route>
 
