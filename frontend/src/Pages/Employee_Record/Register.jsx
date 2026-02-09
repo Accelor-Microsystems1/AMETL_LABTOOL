@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import axios from 'axios';
 import { useAuth } from '../../components/authentication/authContext';
+import { toast } from 'sonner';
 
 function Register({onRegisterSuccess}) {
   const [form, setForm] = useState({name:'', email: '', password: '', role:'JUNIORENGINEER'});
@@ -21,9 +22,9 @@ function Register({onRegisterSuccess}) {
       });
       setForm({name: '', email:'', password:'', role: 'JUNIORENGINEER'});
       if (onRegisterSuccess) onRegisterSuccess();
-      alert('User Registered successfully !');
+      toast.success('User Registered successfully !');
     } catch (err) {
-      alert(err.response?.data?.msg || 'Registration failed');
+      toast.error(err.response?.data?.msg || 'Registration failed');
     } finally {
       setLoading(false);
     }

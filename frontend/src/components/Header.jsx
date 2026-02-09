@@ -28,8 +28,8 @@ const Header = () => {
         roles: ["HOD", "MANAGER", "ADMIN"],
       },
       {
-        path: "/request_details",
-        label: "Request Details",
+        path: "/control_number",
+        label: "Control Number",
         roles: ["MANAGER", "HOD", "ADMIN", "TESTENGINEER"],
       },
       {
@@ -47,6 +47,16 @@ const Header = () => {
         label: "Request Form",
         roles: ["CUSTOMER"],
       },
+      {
+        path: "/customer-dashboard",
+        label: "Customer Dashboard",
+        roles: ["CUSTOMER"],
+      },
+      {
+       path:"/request_form_view",
+       label:"View Request Form",
+        roles:["HOD", "MANAGER", "ADMIN", "TESTENGINEER", "CUSTOMER"]
+      }
     ],
     [],
   );

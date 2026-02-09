@@ -17,7 +17,7 @@ const getAllProjects = (prisma) => async (req, res) => {
           }
         },
         _count: {
-          select: { testRequests: true }
+          select: { projectTests: true }
         }
       }
     });
@@ -50,7 +50,7 @@ const getProjectById = (prisma) => async (req, res) => {
           }
         },
         _count: {
-          select: { testRequests: true }
+          select: { projectTests: true }
         }
       }
     });
