@@ -56,6 +56,11 @@ const Header = () => {
        path:"/request_form_view",
        label:"View Request Form",
         roles:["HOD", "MANAGER", "ADMIN", "TESTENGINEER", "CUSTOMER"]
+      },
+      {
+        path:"/equipment",
+        label:"Equipment Details",
+        roles:["HOD", "MANAGER"],
       }
     ],
     [],

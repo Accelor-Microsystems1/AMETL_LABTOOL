@@ -16,7 +16,6 @@ const getCalibrationsByEquipmentId = (prisma) => async (req, res, next) => {
       where: { equipmentId },
       orderBy: { dateOfCalibration: 'desc' }
     });
-
     return res.status(200).json({
       success: true,
       message: 'Calibration records fetched successfully',

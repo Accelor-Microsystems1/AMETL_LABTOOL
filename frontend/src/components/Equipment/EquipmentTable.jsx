@@ -51,6 +51,7 @@ const EquipmentTable = ({ equipments, isLoading }) => {
         <table className="w-full">
           <thead>
             <tr className="bg-gray-900/50">
+              <th className="px-6 py-4 text-left text-xs font-semibold text-gray-400 uppercase">Sr. No.</th>
               <th className="px-6 py-4 text-left text-xs font-semibold text-gray-400 uppercase">Equipment ID</th>
               <th className="px-6 py-4 text-left text-xs font-semibold text-gray-400 uppercase">Equipment Name</th>
               <th className="px-6 py-4 text-left text-xs font-semibold text-gray-400 uppercase">Manufacturer</th>
@@ -66,6 +67,7 @@ const EquipmentTable = ({ equipments, isLoading }) => {
                 onClick={() => handleRowClick(equipment.id)}
                 className={`cursor-pointer transition-colors ${index % 2 === 0 ? 'bg-transparent' : 'bg-gray-800/30'} hover:bg-gray-700/50`}
               >
+                <td className="px-6 py-4 text-sm text-gray-400 font-medium">{index + 1}.</td>
                 <td className="px-6 py-4 text-sm font-medium text-teal-400">{equipment.equipmentId}</td>
                 <td className="px-6 py-4 text-sm text-gray-200">{equipment.equipmentName}</td>
                 <td className="px-6 py-4 text-sm text-gray-300">{equipment.manufacturerName}</td>

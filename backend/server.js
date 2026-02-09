@@ -1,5 +1,6 @@
 require('dotenv').config();
 const express = require('express');
+const path = require('path');
 const cors = require('cors');
 const { PrismaClient } = require('@prisma/client');
 const { Pool } = require('pg');
@@ -31,6 +32,15 @@ console.log('Prisma test model:', prisma.test ? '✅ Available' : '❌ Not found
 const app = express();
 app.use(cors());
 app.use(express.json());
+
+app.use('/api/uploads', express.static(path.join(__dirname, 'uploads'), {
+  setHeaders: (res, filePath) => {
+    if (filePath.endsWith('.pdf')) {
+      res.setHeader('Content-Type', 'application/pdf');
+      res.setHeader('Content-Disposition', 'attachment');
+    }
+  }
+}));
 
 // Routes
 app.use('/api/employees', createAllEmployeesRouter(prisma));

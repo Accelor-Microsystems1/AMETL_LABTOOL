@@ -57,8 +57,6 @@ const EquipmentDetailPage = () => {
       INACTIVE: { variant: 'default', label: 'Inactive' },
       UNDER_MAINTENANCE: { variant: 'warning', label: 'Under Maintenance' },
       UNDER_CALIBRATION: { variant: 'info', label: 'Under Calibration' },
-      OUT_OF_ORDER: { variant: 'danger', label: 'Out of Order' },
-      RETIRED: { variant: 'default', label: 'Retired' }
     };
     
     const { variant, label } = config[status] || config.INACTIVE;
@@ -141,7 +139,7 @@ const EquipmentDetailPage = () => {
       <div className="min-h-screen bg-gray-900 flex items-center justify-center">
         <div className="text-center">
           <h2 className="text-xl font-semibold text-gray-200">Equipment not found</h2>
-          <Button className="mt-4" onClick={() => navigate('/')}>
+          <Button className="mt-4" onClick={() => navigate('/equipment')}>
             Back to List
           </Button>
         </div>
@@ -155,7 +153,7 @@ const EquipmentDetailPage = () => {
       <header className="bg-gray-800 border-b border-gray-700">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
           <button 
-            onClick={() => navigate('/')}
+            onClick={() => navigate('/equipment')}
             className="flex items-center text-gray-400 hover:text-gray-200 mb-4 transition-colors"
           >
             <svg className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -220,23 +218,14 @@ const EquipmentDetailPage = () => {
               <div className="bg-gray-900/50 rounded-lg p-4">
                 <p className="text-sm text-gray-400">Installation Qualification (IQ)</p>
                 <p className="text-gray-100 font-medium">{formatDate(equipment.installationQualification)}</p>
-                {equipment.installationQualification && (
-                  <button className="text-teal-400 text-sm mt-1 hover:underline">View File</button>
-                )}
               </div>
               <div className="bg-gray-900/50 rounded-lg p-4">
                 <p className="text-sm text-gray-400">Operational Qualification (OQ)</p>
                 <p className="text-gray-100 font-medium">{formatDate(equipment.operationalQualification)}</p>
-                {equipment.operationalQualification && (
-                  <button className="text-teal-400 text-sm mt-1 hover:underline">View File</button>
-                )}
               </div>
               <div className="bg-gray-900/50 rounded-lg p-4">
                 <p className="text-sm text-gray-400">Performance Qualification (PQ)</p>
                 <p className="text-gray-100 font-medium">{formatDate(equipment.performanceQualification)}</p>
-                {equipment.performanceQualification && (
-                  <button className="text-teal-400 text-sm mt-1 hover:underline">View File</button>
-                )}
               </div>
             </div>
           </div>
