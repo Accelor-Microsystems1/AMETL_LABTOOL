@@ -28,6 +28,41 @@ enum RequestStatus {
   REJECTED
 }
 
+
+enum EquipmentStatus {
+  ACTIVE
+  INACTIVE
+  UNDER_MAINTENANCE
+  UNDER_CALIBRATION
+}
+
+enum CalibrationResult {
+  PASS
+  FAIL
+  CONDITIONAL_PASS
+}
+
+enum PerformanceResult {
+  PASS
+  FAIL
+  OBSERVATION
+}
+
+enum MaintenanceStatus {
+  PLANNED
+  IN_PROGRESS
+  COMPLETED
+  OVERDUE
+  CANCELLED
+}
+
+enum IncidentStatus {
+  OPEN
+  UNDER_INVESTIGATION
+  RESOLVED
+  CLOSED
+}
+
 model User {
   id        String   @id @default(uuid())
   email     String   @unique
@@ -140,3 +175,110 @@ model TestRequest {
   @@index([createdAt])
   @@index([testLevel])
 }
+
+model Equipment {
+  id                        String   @id @default(cuid())
+  equipmentId               String   @unique @map("equipment_id")
+  equipmentName             String   @map("equipment_name")
+  manufacturerName          String   @map("manufacturer_name")
+  manufacturerModel         String   @map("manufacturer_model")
+  equipmentSerialNumber     String   @unique @map("equipment_serial_number")
+  range                     String  
+  installationQualification     DateTime  @map("installation_qualification") 
+  operationalQualification      DateTime  @map("operational_qualification")  
+  performanceQualification      DateTime  @map("performance_qualification") 
+  status                    EquipmentStatus @default(ACTIVE)
+  createdAt                 DateTime @default(now()) @map("created_at")
+  updatedAt                 DateTime @updatedAt @map("updated_at")
+  
+  // Relations
+  calibrationRecords        CalibrationRecord[]
+  performanceRecords        PerformanceRecord[]
+  maintenanceRecords        MaintenanceRecord[]
+  incidentRecords           IncidentRecord[]
+  
+  @@map("equipments")
+  @@index([equipmentName])
+  @@index([status])
+}
+
+model CalibrationRecord {
+  id                    String   @id @default(cuid())
+  equipmentId           String   @map("equipment_id")
+  dateOfCalibration     DateTime @map("date_of_calibration")
+  dueDate               DateTime @map("due_date")
+  calibrationResult     CalibrationResult @map("calibration_result")
+  certificateNo         String   @map("certificate_no")
+  certificateFile       String?  @map("certificate_file")   
+  createdAt             DateTime @default(now()) @map("created_at")
+  updatedAt             DateTime @updatedAt @map("updated_at")
+  
+  // Relation
+  equipment             Equipment @relation(fields: [equipmentId], references: [id], onDelete: Cascade)
+  
+  @@map("calibration_records")
+  @@index([equipmentId])
+  @@index([dateOfCalibration])
+  @@index([dueDate])
+}
+
+model PerformanceRecord {
+  id                        String   @id @default(cuid())
+  equipmentId               String   @map("equipment_id")
+  dateOfPerformanceCheck    DateTime @map("date_of_performance_check")
+  nextPerformanceCheck      DateTime @map("next_performance_check")
+  performanceCheckReportNo  String   @map("performance_check_report_no")
+  result                    PerformanceResult
+  createdAt                 DateTime @default(now()) @map("created_at")
+  updatedAt                 DateTime @updatedAt @map("updated_at")
+  
+  // Relation
+  equipment                 Equipment @relation(fields: [equipmentId], references: [id], onDelete: Cascade)
+  
+  @@map("performance_records")
+  @@index([equipmentId])
+  @@index([dateOfPerformanceCheck])
+  @@index([nextPerformanceCheck])
+}
+
+model MaintenanceRecord {
+  id                              String   @id @default(cuid())
+  equipmentId                     String   @map("equipment_id")
+  plannedDateOfMaintenance        DateTime @map("planned_date_of_maintenance")
+  conditionBasedNextMaintenance   DateTime? @map("condition_based_next_maintenance")
+  status                          MaintenanceStatus
+  remark                          String?  @db.Text
+  createdAt                       DateTime @default(now()) @map("created_at")
+  updatedAt                       DateTime @updatedAt @map("updated_at")
+
+  // Relation
+  equipment                       Equipment @relation(fields: [equipmentId], references: [id], onDelete: Cascade)
+  
+  @@map("maintenance_records")
+  @@index([equipmentId])
+  @@index([plannedDateOfMaintenance])
+  @@index([status])
+}
+
+model IncidentRecord {
+  id                      String   @id @default(cuid())
+  equipmentId             String   @map("equipment_id")
+  dateOfFailure           DateTime @map("date_of_failure")
+  typesOfProblemsObserved String   @db.Text @map("types_of_problems_observed")
+  causesOfFailures        String   @db.Text @map("causes_of_failures")
+  correctiveActionTaken   String   @db.Text @map("corrective_action_taken")
+  presentStatus           IncidentStatus @map("present_status")
+  statusDate              DateTime @map("status_date")
+  createdAt               DateTime @default(now()) @map("created_at")
+  updatedAt               DateTime @updatedAt @map("updated_at")
+  
+  // Relation
+  equipment               Equipment @relation(fields: [equipmentId], references: [id], onDelete: Cascade)
+  
+  @@map("incident_records")
+  @@index([equipmentId])
+  @@index([dateOfFailure])
+  @@index([presentStatus])
+}
+
+
