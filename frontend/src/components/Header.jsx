@@ -20,7 +20,7 @@ const Header = () => {
       {
         path: "/dashboard",
         label: "Dashboard",
-        roles: ["HOD", "MANAGER", "ADMIN", "JUNIORENGINEER", "TESTENGINEER", "CUSTOMER", "CEO"],
+        roles: ["HOD", "MANAGER", "ADMIN", "JUNIORENGINEER", "TESTENGINEER", "CEO"],
       },
       {
         path: "/units",
@@ -42,25 +42,26 @@ const Header = () => {
         label: "List of Employees",
         roles: ["HOD"],
       },
-      {
-        path: "/request_form",
-        label: "Request Form",
-        roles: ["CUSTOMER"],
-      },
-      {
+       {
         path: "/customer-dashboard",
         label: "Customer Dashboard",
         roles: ["CUSTOMER"],
       },
+     
+     
       {
        path:"/request_form_view",
        label:"View Request Form",
+<<<<<<< HEAD
+        roles:["HOD", "MANAGER", "ADMIN", "TESTENGINEER"]
+=======
         roles:["HOD", "MANAGER", "ADMIN", "TESTENGINEER", "CUSTOMER"]
       },
       {
         path:"/equipment",
         label:"Equipment Details",
         roles:["HOD", "MANAGER"],
+>>>>>>> cce6c9d59c9cc2961a7a3d067416961109ccf7f8
       }
     ],
     [],
@@ -126,7 +127,7 @@ const Header = () => {
         >
           <div className="flex items-center gap-3 pl-4 py-3">
             <Link
-              to="/dashboard"
+              
               className="font-semibold text-gray-200 tracking-tight text-base sm:text-lg"
             >
               LabTool

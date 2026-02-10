@@ -1,33 +1,44 @@
-// routers/TestRequest/testRequestRoutes.js
+// backend/routers/Test_Request/testRequest.Routes.js
 
-const express = require('express');
+const express = require("express");
+const { authMiddleware, requireRole } = require("../../middleware/auth");
 const {
   getAllRequests,
-  getRequestsByCustomer,
+  getMyRequests,
   getRequestById,
+  createRequest,
   updateRequestStatus,
-  createTestRequest
-} = require('../../controllers/Test_Request/testRequest.controller');
+  deleteRequest,
+} = require("../../controllers/Test_Request/testRequest.controller");
 
-const createTestRequestRoutes = (prisma) => {
+function createTestRequestRouter(prisma) {
   const router = express.Router();
 
-  // Get all requests (HOD dashboard)
-  router.get('/', getAllRequests(prisma));
+  // Get all requests
+  router.get("/", getAllRequests(prisma));
 
-  // Get requests by customer email
-  router.get('/customer/:email', getRequestsByCustomer(prisma));
+  // Get logged-in user's requests
+  router.get("/my-requests", authMiddleware, getMyRequests(prisma));
 
   // Get single request by ID
-  router.get('/:id', getRequestById(prisma));
+  router.get("/:id", getRequestById(prisma));
 
   // Create new request
-  router.post('/', createTestRequest(prisma));
+  router.post("/", authMiddleware, createRequest(prisma));
 
-  // Update request status (Approve/Reject)
-  router.patch('/:id/status', updateRequestStatus(prisma));
+  // Update request status (Admin/HOD only)
+  router.put(
+    "/:id/status",
+    authMiddleware,
+    requireRole("ADMIN", "HOD"),
+    updateRequestStatus(prisma)
+  );
+
+  // Delete request
+  router.delete("/:id", authMiddleware, deleteRequest(prisma));
 
   return router;
-};
+}
 
-module.exports = createTestRequestRoutes;
+// ✅ Direct export (not destructured)
+module.exports = createTestRequestRouter;

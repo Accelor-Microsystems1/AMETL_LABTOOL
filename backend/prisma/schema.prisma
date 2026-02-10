@@ -164,7 +164,16 @@ model TestRequest {
   customerRepDate    DateTime
   qaRepName          String?
   qaRepDate          DateTime?  
-  status            RequestStatus @default(PENDING)
+  
+   // ADD THESE MISSING FIELDS 👇
+  status              String    @default("PENDING")
+  approvedBy          String?
+  approvedAt          DateTime?
+  rejectedBy          String?
+  rejectedAt          DateTime?
+  rejectionReason     String?
+
+
   referenceNumber   String?       @unique @default(uuid())
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt  

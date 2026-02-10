@@ -1,99 +1,79 @@
-// controllers/Test_Request/testRequest.controller.js
 
-// ============================================
-// GET ALL REQUESTS (For HOD)
-// ============================================
-const getAllRequests = (prisma) => async (req, res) => {
+
+
+
+// Get all requests (for admin or public view)
+const getAllRequests = (prisma)=> async (req, res) => {
   try {
-    const { status } = req.query;
+    const requests = await prisma.testRequest.findMany({
+      orderBy: {
+        createdAt: 'desc'
+      }
+    });
 
-    const where = {};
-    if (status) {
-      where.status = status;
+    res.json({
+      success: true,
+      data: requests
+    });
+  } catch (error) {
+    console.error('Error fetching all requests:', error);
+    res.status(500).json({
+      success: false,
+      error: error.message
+    });
+  }
+};
+
+// Get requests for logged-in user
+const getMyRequests = (prisma)=> async (req, res) => {
+  try {
+    // Get user from auth middleware
+    const userEmail = req.user.email;
+    const userRole = req.user.role;
+
+    let requests;
+
+    if (userRole === 'ADMIN' || userRole === 'HOD') {
+      // Admin/HOD sees all requests
+      requests = await prisma.testRequest.findMany({
+        orderBy: {
+          createdAt: 'desc'
+        }
+      });
+    } else {
+      // Customer sees only their requests
+      requests = await prisma.testRequest.findMany({
+        where: {
+          customerEmail: userEmail
+        },
+        orderBy: {
+          createdAt: 'desc'
+        }
+      });
     }
 
-    const requests = await prisma.testRequest.findMany({
-      where,
-      orderBy: { createdAt: 'desc' },
-      select: {
-        id: true,
-        referenceNumber: true,
-        companyName: true,
-        contactPerson: true,
-        contactNumber: true,
-        customerEmail: true,
-        uutName: true,
-        noOfUUT: true,
-        uutSerialNo: true,
-        calculatedQuantity: true,
-        testName: true,
-        testSpecification: true,
-        testStandard: true,
-        status: true,
-        createdAt: true,
-      }
-    });
-
-    res.status(200).json({
+    res.json({
       success: true,
-      count: requests.length,
       data: requests
     });
   } catch (error) {
-    console.error('Error fetching requests:', error);
+    console.error('Error fetching user requests:', error);
     res.status(500).json({
       success: false,
-      error: 'Failed to fetch requests'
+      error: error.message
     });
   }
 };
 
-// ============================================
-// GET REQUESTS BY CUSTOMER EMAIL
-// ============================================
-const getRequestsByCustomer = (prisma) => async (req, res) => {
-  try {
-    const { email } = req.params;
-
-    const requests = await prisma.testRequest.findMany({
-      where: { customerEmail: email },
-      orderBy: { createdAt: 'desc' },
-      select: {
-        id: true,
-        referenceNumber: true,
-        uutName: true,
-        testName: true,
-        uutSerialNo: true,
-        calculatedQuantity: true,
-        status: true,
-        createdAt: true,
-        rejectionReason: true,
-      }
-    });
-
-    res.status(200).json({
-      success: true,
-      count: requests.length,
-      data: requests
-    });
-  } catch (error) {
-    console.error('Error fetching customer requests:', error);
-    res.status(500).json({
-      success: false,
-      error: 'Failed to fetch requests'
-    });
-  }
-};
-
-// ============================================
-// GET SINGLE REQUEST BY ID
-// ============================================
-const getRequestById = (prisma) => async (req, res) => {
+// Get single request by ID
+const getRequestById = (prisma)=> async (req, res) => {
   try {
     const { id } = req.params;
 
     const request = await prisma.testRequest.findUnique({
-      where: { id: parseInt(id) }
+      where: {
+        id: parseInt(id)
+      }
     });
 
     if (!request) {
@@ -103,7 +83,7 @@ const getRequestById = (prisma) => async (req, res) => {
       });
     }
 
-    res.status(200).json({
+    res.json({
       success: true,
       data: request
     });
@@ -111,33 +91,51 @@ const getRequestById = (prisma) => async (req, res) => {
     console.error('Error fetching request:', error);
     res.status(500).json({
       success: false,
-      error: 'Failed to fetch request'
+      error: error.message
     });
   }
 };
 
-// ============================================
-// UPDATE REQUEST STATUS (Approve/Reject)
-// ============================================
-const updateRequestStatus = (prisma) => async (req, res) => {
+// Create new request
+const createRequest = (prisma)=> async (req, res) => {
+  try {
+    const userEmail = req.user.email;
+    const requestData = {
+      ...req.body,
+      customerEmail: userEmail,
+      status: 'PENDING'
+    };
+
+    const newRequest = await prisma.testRequest.create({
+      data: requestData
+    });
+
+    res.status(201).json({
+      success: true,
+      data: newRequest
+    });
+  } catch (error) {
+    console.error('Error creating request:', error);
+    res.status(500).json({
+      success: false,
+      error: error.message
+    });
+  }
+};
+
+// Update request status (Admin/HOD only)
+const updateRequestStatus = (prisma)=> async (req, res) => {
   try {
     const { id } = req.params;
-    const { status, rejectionReason, approvedBy } = req.body;
+    const { status, rejectionReason } = req.body;
+    const userRole = req.user.role;
+    const userName = req.user.name || req.user.email;
 
-    // Validate status
-    const validStatuses = ['PENDING', 'APPROVED', 'REJECTED', 'IN_PROGRESS', 'COMPLETED', 'CANCELLED'];
-    if (!validStatuses.includes(status)) {
-      return res.status(400).json({
+    // Check if user is admin or HOD
+    if (userRole !== 'ADMIN' && userRole !== 'HOD') {
+      return res.status(403).json({
         success: false,
-        error: 'Invalid status'
-      });
-    }
-
-    // If rejecting, require reason
-    if (status === 'REJECTED' && !rejectionReason) {
-      return res.status(400).json({
-        success: false,
-        error: 'Rejection reason is required'
+        error: 'Only Admin/HOD can update request status'
       });
     }
 
@@ -146,76 +144,101 @@ const updateRequestStatus = (prisma) => async (req, res) => {
       updatedAt: new Date()
     };
 
+    // Add approval/rejection details based on status
     if (status === 'APPROVED') {
-      updateData.approvedBy = approvedBy || null;
+      updateData.approvedBy = userName;
       updateData.approvedAt = new Date();
+    } else if (status === 'REJECTED') {
+      updateData.rejectedBy = userName;
+      updateData.rejectedAt = new Date();
+      if (rejectionReason) {
+        updateData.rejectionReason = rejectionReason;
+      }
     }
 
-    if (status === 'REJECTED') {
-      updateData.rejectionReason = rejectionReason;
-    }
-
-    const request = await prisma.testRequest.update({
-      where: { id: parseInt(id) },
+    const updatedRequest = await prisma.testRequest.update({
+      where: {
+        id: parseInt(id)
+      },
       data: updateData
     });
 
-    res.status(200).json({
+    res.json({
       success: true,
-      message: `Request ${status.toLowerCase()} successfully`,
-      data: request
+      data: updatedRequest
     });
   } catch (error) {
     console.error('Error updating request status:', error);
-    
-    if (error.code === 'P2025') {
+    res.status(500).json({
+      success: false,
+      error: error.message
+    });
+  }
+};
+
+// Delete request
+const deleteRequest = (prisma)=> async (req, res) => {
+  try {
+    const { id } = req.params;
+    const userEmail = req.user.email;
+    const userRole = req.user.role;
+
+    // First, get the request
+    const request = await prisma.testRequest.findUnique({
+      where: {
+        id: parseInt(id)
+      }
+    });
+
+    if (!request) {
       return res.status(404).json({
         success: false,
         error: 'Request not found'
       });
     }
 
-    res.status(500).json({
-      success: false,
-      error: 'Failed to update request status'
+    // Check permissions
+    if (userRole === 'CUSTOMER') {
+      // Customers can only delete their own PENDING requests
+      if (request.customerEmail !== userEmail) {
+        return res.status(403).json({
+          success: false,
+          error: 'You can only delete your own requests'
+        });
+      }
+      if (request.status && request.status !== 'PENDING') {
+        return res.status(403).json({
+          success: false,
+          error: 'You can only delete pending requests'
+        });
+      }
+    }
+
+    // Delete the request
+    await prisma.testRequest.delete({
+      where: {
+        id: parseInt(id)
+      }
     });
-  }
-};
 
-// ============================================
-// CREATE TEST REQUEST (Updated with status)
-// ============================================
-const createTestRequest = (prisma) => async (req, res) => {
-  try {
-    const data = {
-      ...req.body,
-      customerRepDate: new Date(req.body.customerRepDate),
-      qaRepDate: req.body.qaRepDate ? new Date(req.body.qaRepDate) : null,
-      status: 'PENDING'  // ✅ Default status
-    };
-
-    const testRequest = await prisma.testRequest.create({
-      data
-    });
-
-    res.status(201).json({
+    res.json({
       success: true,
-      message: 'Test request created successfully',
-      data: testRequest
+      message: 'Request deleted successfully'
     });
   } catch (error) {
-    console.error('Error creating test request:', error);
+    console.error('Error deleting request:', error);
     res.status(500).json({
       success: false,
-      error: 'Failed to create test request'
+      error: error.message
     });
   }
 };
 
 module.exports = {
   getAllRequests,
-  getRequestsByCustomer,
+  getMyRequests,
   getRequestById,
+  createRequest,
   updateRequestStatus,
-  createTestRequest
+  deleteRequest
 };
