@@ -54,7 +54,6 @@ const RequestFormView = () => {
     }
   };
 
-  // ✅ FIXED - Token now retrieved from sessionStorage + method corrected
   const handleApprove = async (id) => {
     setIsProcessing(true);
     try {
@@ -85,7 +84,6 @@ const RequestFormView = () => {
     }
   };
 
-  // ✅ FIXED - Added auth header + changed PATCH to PUT (to match backend)
   const handleReject = async () => {
     if (!rejectionReason.trim()) {
       alert("Please provide a rejection reason");
