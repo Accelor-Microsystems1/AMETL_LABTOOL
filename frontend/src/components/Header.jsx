@@ -52,16 +52,12 @@ const Header = () => {
       {
        path:"/request_form_view",
        label:"View Request Form",
-<<<<<<< HEAD
-        roles:["HOD", "MANAGER", "ADMIN", "TESTENGINEER"]
-=======
-        roles:["HOD", "MANAGER", "ADMIN", "TESTENGINEER", "CUSTOMER"]
+       roles:["HOD", "MANAGER", "ADMIN", "TESTENGINEER", "CUSTOMER"]
       },
       {
         path:"/equipment",
         label:"Equipment Details",
         roles:["HOD", "MANAGER"],
->>>>>>> cce6c9d59c9cc2961a7a3d067416961109ccf7f8
       }
     ],
     [],
