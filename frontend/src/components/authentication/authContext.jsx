@@ -97,7 +97,8 @@ export const AuthProvider = ({ children }) => {
       setToken(data.token);
       setUser(payload);
 
-      return { success: true };
+      // Return role so callers can perform immediate role-based navigation
+      return { success: true, role: payload?.role, user: payload };
     } catch (error) {
       console.error("Login error:", error);
       return { success: false, message: "Network error" };

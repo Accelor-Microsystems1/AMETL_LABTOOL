@@ -32,7 +32,12 @@ const Login = () => {
     try {
       const result = await login(email, password, rememberMe);
       if (result.success) {
-        navigate("/dashboard");
+        // If the logged-in user is a customer, redirect to customer dashboard
+        if (result.role === "CUSTOMER") {
+          navigate("/customer-dashboard");
+        } else {
+          navigate("/dashboard");
+        }
       } else {
         setError(result.message || "Invalid credentials");
       }

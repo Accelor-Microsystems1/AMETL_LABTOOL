@@ -284,4 +284,50 @@ body {
 }
 
  
- 
+ /* Global Print Styles */
+/* @media print {
+  
+  header,
+  nav,
+  footer,
+  aside,
+  .navbar,
+  .sidebar,
+  .header,
+  .navigation,
+  .nav-bar,
+  .top-bar,
+  .footer,
+  .print\:hidden {
+    display: none !important;
+    visibility: hidden !important;
+  }
+  
+  html, body {
+    margin: 0 !important;
+    padding: 0 !important;
+    background: white !important;
+    width: 100% !important;
+    height: auto !important;
+  }
+  
+  @page {
+    size: A4;
+    margin: 10mm;
+  }
+  
+  * {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+} */
+
+@media print {
+  .sticky,
+  .sticky * {
+    display: none !important;
+    height: 0 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+}
