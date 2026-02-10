@@ -124,7 +124,6 @@ model UutRecordTest {
 
   @@index([uutRecordId])
   @@index([testId])
-  @@index([status])
 }
 
 model Project {
