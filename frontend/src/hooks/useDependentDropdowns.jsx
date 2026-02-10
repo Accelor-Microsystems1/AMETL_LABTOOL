@@ -4,12 +4,10 @@ const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
 export const useDependentDropdowns = () => {
   const [projectNames, setProjectNames] = useState([]);
-  const [serialNumbers, setSerialNumbers] = useState([]);
-  const [allSerialNumbers, setAllSerialNumbers] = useState([]); // All serials before filtering
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
-  // Fetch all project names on mount
+  // Fetch all project names from approved requests on mount
   useEffect(() => {
     fetchProjectNames();
   }, []);
@@ -19,114 +17,91 @@ export const useDependentDropdowns = () => {
       setLoading(true);
       setError(null);
       const token = localStorage.getItem("token") || sessionStorage.getItem("token");
-      const response = await fetch(`${API_BASE_URL}/uut-records/dropdown/projects`, {
+      
+    //   console.log("🔍 Fetching approved requests for project names...");
+      
+      const response = await fetch(`${API_BASE_URL}/test-requests`, {
         headers: {
           "Authorization": `Bearer ${token}`
         }
       });
       const data = await response.json();
+      
       if (!response.ok) {
-        throw new Error(data.error || "Failed to fetch projects");
+        throw new Error(data.error || "Failed to fetch requests");
       }
-      setProjectNames(data.data || []);
-      // Also fetch all serial numbers on initial load
-      await fetchAllSerialNumbers();
+
+      // Filter approved requests and get unique UUT names
+      const approvedRequests = (data.data || []).filter(req => req.status === "APPROVED" && req.uutName);
+      const uniqueProjects = [...new Set(approvedRequests.map(r => r.uutName))].sort();
+      
+    //   console.log("✅ Projects found:", uniqueProjects);
+      
+      setProjectNames(uniqueProjects);
     } catch (err) {
       setError(err.message);
-      console.error("Error fetching project names:", err);
+      console.error("❌ Error fetching project names:", err);
     } finally {
       setLoading(false);
     }
   };
 
-  // Fetch all serial numbers from all projects
-  const fetchAllSerialNumbers = async () => {
+  // Search for a serial number in approved requests of a specific test type
+  const searchSerialInProject = async (projectName, serialNo) => {
+    if (!projectName || !serialNo) return null;
+
     try {
       const token = localStorage.getItem("token") || sessionStorage.getItem("token");
-      const response = await fetch(`${API_BASE_URL}/uut-records`, {
+      
+    //   console.log(`🔍 Searching for serial: ${serialNo} in test: ${projectName}`);
+      
+      const response = await fetch(`${API_BASE_URL}/test-requests`, {
         headers: {
           "Authorization": `Bearer ${token}`
         }
       });
       const data = await response.json();
-      if (response.ok && data.data) {
-        const uniqSerials = [...new Set(data.data.map(r => r.serialNo))];
-        setAllSerialNumbers(uniqSerials.sort());
-        setSerialNumbers(uniqSerials.sort()); // Initially show all
-      }
-    } catch (err) {
-      console.error("Error fetching all serial numbers:", err);
-    }
-  };
-
-  const fetchSerialNumbersByProject = async (projectName) => {
-    if (!projectName) {
-      setSerialNumbers(allSerialNumbers); // Reset to all serials
-      return;
-    }
-
-    try {
-      setLoading(true);
-      setError(null);
-      const token = localStorage.getItem("token") || sessionStorage.getItem("token");
-      const response = await fetch(
-        `${API_BASE_URL}/uut-records/dropdown/serials/${encodeURIComponent(projectName)}`,
-        {
-          headers: {
-            "Authorization": `Bearer ${token}`
-          }
-        }
-      );
-      const data = await response.json();
+      
       if (!response.ok) {
-        throw new Error(data.error || "Failed to fetch serial numbers");
+        throw new Error(data.error || "Failed to fetch requests");
       }
-      setSerialNumbers(data.data || []);
-    } catch (err) {
-      setError(err.message);
-      setSerialNumbers(allSerialNumbers); // Fall back to all serials
-      console.error("Error fetching serial numbers:", err);
-    } finally {
-      setLoading(false);
-    }
-  };
 
-  const fetchDetailsBySerialNumber = async (serialNo) => {
-    if (!serialNo) return null;
-
-    try {
-      setLoading(true);
-      setError(null);
-      const token = localStorage.getItem("token") || sessionStorage.getItem("token");
-      const response = await fetch(
-        `${API_BASE_URL}/uut-records/dropdown/project-by-serial/${encodeURIComponent(serialNo)}`,
-        {
-          headers: {
-            "Authorization": `Bearer ${token}`
-          }
-        }
+      // Filter by UUT name, approved status, and serial number
+      const matchedRequest = (data.data || []).find(
+        req => req.uutName === projectName && 
+               req.status === "APPROVED" && 
+               req.uutSerialNo.toLowerCase() === serialNo.toLowerCase()
       );
-      const data = await response.json();
-      if (!response.ok) {
-        throw new Error(data.error || "Failed to fetch details");
+
+      if (matchedRequest) {
+        // console.log("✅ Serial number match found:", matchedRequest);
+        return {
+          projectName: matchedRequest.uutName,
+          serialNo: matchedRequest.uutSerialNo,
+          customerName: matchedRequest.companyName,
+          customerCode: (matchedRequest.companyName || "XX").substring(0, 2).toUpperCase(),
+          testTypeName: matchedRequest.testName,
+          testTypeCode: matchedRequest.testLevel?.charAt(0) || "T",
+          uutType: "UT",
+          uutQty: parseInt(matchedRequest.noOfUUT) || 1,
+          contactPersonName: matchedRequest.contactPerson,
+          uutDescription: matchedRequest.uutName,
+        };
+      } else {
+        console.log("❌ No matching serial number found");
+        return null;
       }
-      return data.data;
     } catch (err) {
-      setError(err.message);
-      console.error("Error fetching details by serial number:", err);
+      console.error("Error searching for serial:", err);
       return null;
-    } finally {
-      setLoading(false);
     }
   };
 
   return {
     projectNames,
-    serialNumbers,
     loading,
     error,
     fetchProjectNames,
-    fetchSerialNumbersByProject,
-    fetchDetailsBySerialNumber,
+    searchSerialInProject,
   };
 };

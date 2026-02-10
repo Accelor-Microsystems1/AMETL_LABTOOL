@@ -173,11 +173,18 @@ const previewUutCode = (prisma) => async (req, res) => {
 
     const inDate = uutInDate ? new Date(uutInDate) : new Date();
     const inDateDay = getStartOfDay(inDate);
+    const nextDay = new Date(inDateDay);
+    nextDay.setDate(nextDay.getDate() + 1);
 
     const customerCode = generateCustomerCode(customerName);
 
     const maxSerial = await prisma.uutRecord.aggregate({
-      where: { inDateDay },
+      where: { 
+        uutInDate: {
+          gte: inDateDay,
+          lt: nextDay
+        }
+      },
       _max: { serialOfDay: true },
     });
 
@@ -261,6 +268,8 @@ const createRecord = (prisma) => async (req, res) => {
 
     const inDate = uutInDate ? new Date(uutInDate) : new Date();
     const inDateDay = getStartOfDay(inDate);
+    const nextDay = new Date(inDateDay);
+    nextDay.setDate(nextDay.getDate() + 1);
     const customerCode = generateCustomerCode(customerName);
 
     let attempts = 0;
@@ -272,7 +281,12 @@ const createRecord = (prisma) => async (req, res) => {
       try {
         const created = await prisma.$transaction(async (tx) => {
           const maxSerial = await tx.uutRecord.aggregate({
-            where: { inDateDay },
+            where: { 
+              uutInDate: {
+                gte: inDateDay,
+                lt: nextDay
+              }
+            },
             _max: { serialOfDay: true },
           });
 
@@ -301,7 +315,6 @@ const createRecord = (prisma) => async (req, res) => {
               serialNo,
               challanNo: challanNo || null,
               uutInDate: inDate,
-              inDateDay,
               customerName,
               customerCode,
               testTypeName,
