@@ -9,12 +9,20 @@ const {
   checkoutRecord,
   deleteRecord,
   getStats,
+  getProjectNames,
+  getSerialNumbersByProject,
+  getProjectBySerialNumber,
 } = require("../../controllers/UUTRecord/uutRecordsController.js");
 
 function createUutRoutes(prisma) {
   const router = express.Router();
 
   router.get("/stats", getStats(prisma));
+
+  // Dropdown endpoints
+  router.get("/dropdown/projects", getProjectNames(prisma));
+  router.get("/dropdown/serials/:projectName", getSerialNumbersByProject(prisma));
+  router.get("/dropdown/project-by-serial/:serialNo", getProjectBySerialNumber(prisma));
 
   router.get("/", getAllRecords(prisma));
 

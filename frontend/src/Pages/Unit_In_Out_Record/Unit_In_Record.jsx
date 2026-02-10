@@ -1,6 +1,7 @@
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
+import { useDependentDropdowns } from "../../hooks/useDependentDropdowns";
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
@@ -17,6 +18,13 @@ const UutIn = () => {
   const [showConfirmModal, setShowConfirmModal] = useState(false);
   const [previewData, setPreviewData] = useState(null);
   
+  const {
+    projectNames,
+    serialNumbers,
+    fetchSerialNumbersByProject,
+    fetchDetailsBySerialNumber,
+  } = useDependentDropdowns();
+
   const [form, setForm] = useState({
     serialNo: "",
     challanNo: "",
@@ -28,7 +36,8 @@ const UutIn = () => {
     uutType: "UT",
     contactPersonName: "",
   });
-  const uutQty= getUnitCount(form.serialNo);
+  
+  const uutQty = getUnitCount(form.serialNo);
   const today = new Date().toISOString().split("T")[0];
 
   const [showCustomTest, setShowCustomTest] = useState(false);
@@ -51,6 +60,44 @@ const UutIn = () => {
 
   const handleChange = (field) => (e) => {
     setForm(prev => ({ ...prev, [field]: e.target.value }));
+  };
+
+  // Handle project name change
+  const handleProjectChange = async (e) => {
+    const projectName = e.target.value;
+    setForm(prev => ({ ...prev, projectName, serialNo: "" }));
+    
+    if (projectName) {
+      await fetchSerialNumbersByProject(projectName);
+    }
+  };
+
+  // Handle serial number change - auto-fill form
+  const handleSerialNumberChange = async (e) => {
+    const serialNo = e.target.value;
+    setForm(prev => ({ ...prev, serialNo }));
+
+    if (serialNo) {
+      try {
+        const details = await fetchDetailsBySerialNumber(serialNo);
+        if (details) {
+          // Auto-fill form with details from serial number
+          setForm(prev => ({
+            ...prev,
+            serialNo,
+            projectName: details.projectName || prev.projectName,
+            customerName: details.customerName || prev.customerName,
+            testTypeName: details.testTypeName || prev.testTypeName,
+            testTypeCode: details.testTypeCode || prev.testTypeCode,
+            uutType: details.uutType || prev.uutType,
+            contactPersonName: details.contactPersonName || prev.contactPersonName,
+          }));
+          toast.success("Form auto-filled with serial number details");
+        }
+      } catch (error) {
+        toast.error("Failed to fetch serial number details");
+      }
+    }
   };
 
   const handleTestTypeChange = (e) => {
@@ -92,6 +139,7 @@ const UutIn = () => {
     setCustomTestName("");
     setCustomTestCode("");
   };
+  
   function getUnitCount(input) {
   if (!input || !input.trim()) return 0;
 
@@ -236,28 +284,36 @@ const UutIn = () => {
               <label className="block text-sm font-medium text-slate-700 mb-1">
                 Serial No. <span className="text-red-500">*</span>
               </label>
-              <input
-                type="text"
+              <select
                 value={form.serialNo}
-                onChange={handleChange("serialNo")}
+                onChange={handleSerialNumberChange}
                 className="w-full px-4 py-2 border border-slate-300 rounded-xl focus:ring-2 focus:ring-amber-500 focus:border-amber-500 outline-none"
-                placeholder="Enter unique serial number"
-              />
+              >
+                <option value="">-- Select Serial Number --</option>
+                {serialNumbers.map((item) => (
+                  <option key={item.serialNo} value={item.serialNo}>
+                    {item.serialNo}
+                  </option>
+                ))}
+              </select>
             </div>
             <div>
               <label className="block text-sm font-medium text-slate-700 mb-1">
                 Project Name <span className="text-red-500">*</span>
               </label>
-              <input
-                type="text"
+              <select
                 value={form.projectName}
-                onChange={handleChange("projectName")}
+                onChange={handleProjectChange}
                 className="w-full px-4 py-2 border border-slate-300 rounded-xl focus:ring-2 focus:ring-amber-500 focus:border-amber-500 outline-none"
-                placeholder="e.g., Project V2"
-              />
+              >
+                <option value="">-- Select Project Name --</option>
+                {projectNames.map((name) => (
+                  <option key={name} value={name}>
+                    {name}
+                  </option>
+                ))}
+              </select>
             </div>
-          
-
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>

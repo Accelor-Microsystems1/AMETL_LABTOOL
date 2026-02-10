@@ -15,12 +15,9 @@ import RequestForm from "./Pages/RequestForm/requestForm";
 import CreateProject from "./Pages/CreateProject/CreateProject";
 import RequestFormView from "./Pages/RequestForm/RequestFormView";
 import CustomerDashboard from "./Pages/RequestForm/CustomerDashboard";
-<<<<<<< HEAD
 import TestRequestPreview from "./components/customizedComponents/TestRequestPreview";
-=======
 import EquipmentListPage from "./Pages/Equipment_Details/EquipmentListPage";
 import EquipmentDetail from "./Pages/Equipment_Details/EquipmentDetail";
->>>>>>> cce6c9d59c9cc2961a7a3d067416961109ccf7f8
 
 export default function App() {
   return (
