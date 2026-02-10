@@ -71,7 +71,6 @@ const createPerformance = (prisma) => async (req, res, next) => {
       nextPerformanceCheck,
       performanceCheckReportNo,
       result,
-      createdBy
     } = req.body;
 
     if (!dateOfPerformanceCheck || !nextPerformanceCheck || !performanceCheckReportNo || !result) {
@@ -109,7 +108,6 @@ const createPerformance = (prisma) => async (req, res, next) => {
         nextPerformanceCheck: new Date(nextPerformanceCheck),
         performanceCheckReportNo,
         result,
-        createdBy: createdBy || null
       }
     });
 

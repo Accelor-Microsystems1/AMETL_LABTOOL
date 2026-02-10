@@ -126,56 +126,51 @@ const createEquipment = (prisma) => async (req, res, next) => {
       manufacturerModel,
       equipmentSerialNumber,
       range,
-      installationQualificationDate,
-      operationalQualificationDate,
-      performanceQualificationDate,
+      installationQualification,
+      operationalQualification,
+      performanceQualification,
       status = 'ACTIVE',
-      createdBy
     } = req.body;
 
-    if (!equipmentId || !equipmentName || !manufacturerName || !manufacturerModel || !equipmentSerialNumber) {
+    // Required fields (based on model)
+    if (
+      !equipmentId ||
+      !equipmentName ||
+      !manufacturerName ||
+      !manufacturerModel ||
+      !equipmentSerialNumber ||
+      !range ||
+      !installationQualification ||
+      !operationalQualification ||
+      !performanceQualification
+    ) {
       return res.status(400).json({
         success: false,
         message: 'Missing required fields',
-        required: ['equipmentId', 'equipmentName', 'manufacturerName', 'manufacturerModel', 'equipmentSerialNumber']
       });
     }
 
+    // Unique checks
     const existingEquipment = await prisma.equipment.findUnique({
-      where: { equipmentId }
+      where: { equipmentId },
     });
 
     if (existingEquipment) {
       return res.status(400).json({
         success: false,
-        message: 'Equipment ID already exists'
+        message: 'Equipment ID already exists',
       });
     }
 
     const existingSerial = await prisma.equipment.findUnique({
-      where: { equipmentSerialNumber }
+      where: { equipmentSerialNumber },
     });
 
     if (existingSerial) {
       return res.status(400).json({
         success: false,
-        message: 'Equipment Serial Number already exists'
+        message: 'Equipment Serial Number already exists',
       });
-    }
-    let installationQualification = null;
-    let operationalQualification = null;
-    let performanceQualification = null;
-
-    if (req.files) {
-      if (req.files.installationQualification) {
-        installationQualification = req.files.installationQualification[0].path;
-      }
-      if (req.files.operationalQualification) {
-        operationalQualification = req.files.operationalQualification[0].path;
-      }
-      if (req.files.performanceQualification) {
-        performanceQualification = req.files.performanceQualification[0].path;
-      }
     }
 
     const equipment = await prisma.equipment.create({
@@ -185,24 +180,21 @@ const createEquipment = (prisma) => async (req, res, next) => {
         manufacturerName,
         manufacturerModel,
         equipmentSerialNumber,
-        range: range || null,
-        installationQualification,
-        installationQualificationDate: installationQualificationDate ? new Date(installationQualificationDate) : null,
-        operationalQualification,
-        operationalQualificationDate: operationalQualificationDate ? new Date(operationalQualificationDate) : null,
-        performanceQualification,
-        performanceQualificationDate: performanceQualificationDate ? new Date(performanceQualificationDate) : null,
+        range,
+
+        installationQualification: new Date(installationQualification),
+        operationalQualification: new Date(operationalQualification),
+        performanceQualification: new Date(performanceQualification),
+
         status,
-        createdBy: createdBy || null
-      }
+      },
     });
 
     return res.status(201).json({
       success: true,
       message: 'Equipment created successfully',
-      data: equipment
+      data: equipment,
     });
-
   } catch (error) {
     next(error);
   }
@@ -217,32 +209,36 @@ const updateEquipment = (prisma) => async (req, res, next) => {
       manufacturerModel,
       equipmentSerialNumber,
       range,
-      installationQualificationDate,
-      operationalQualificationDate,
-      performanceQualificationDate,
-      status
+      installationQualification,
+      operationalQualification,
+      performanceQualification,
+      status,
     } = req.body;
 
     const existingEquipment = await prisma.equipment.findUnique({
-      where: { id }
+      where: { id },
     });
 
     if (!existingEquipment) {
       return res.status(404).json({
         success: false,
-        message: 'Equipment not found'
+        message: 'Equipment not found',
       });
     }
 
-    if (equipmentSerialNumber && equipmentSerialNumber !== existingEquipment.equipmentSerialNumber) {
+    // Serial number uniqueness check
+    if (
+      equipmentSerialNumber &&
+      equipmentSerialNumber !== existingEquipment.equipmentSerialNumber
+    ) {
       const existingSerial = await prisma.equipment.findUnique({
-        where: { equipmentSerialNumber }
+        where: { equipmentSerialNumber },
       });
 
       if (existingSerial) {
         return res.status(400).json({
           success: false,
-          message: 'Equipment Serial Number already exists'
+          message: 'Equipment Serial Number already exists',
         });
       }
     }
@@ -252,43 +248,39 @@ const updateEquipment = (prisma) => async (req, res, next) => {
     if (equipmentName) updateData.equipmentName = equipmentName;
     if (manufacturerName) updateData.manufacturerName = manufacturerName;
     if (manufacturerModel) updateData.manufacturerModel = manufacturerModel;
-    if (equipmentSerialNumber) updateData.equipmentSerialNumber = equipmentSerialNumber;
-    if (range !== undefined) updateData.range = range;
+    if (equipmentSerialNumber)
+      updateData.equipmentSerialNumber = equipmentSerialNumber;
+    if (range) updateData.range = range;
     if (status) updateData.status = status;
 
-    if (installationQualificationDate) {
-      updateData.installationQualificationDate = new Date(installationQualificationDate);
-    }
-    if (operationalQualificationDate) {
-      updateData.operationalQualificationDate = new Date(operationalQualificationDate);
-    }
-    if (performanceQualificationDate) {
-      updateData.performanceQualificationDate = new Date(performanceQualificationDate);
+    if (installationQualification) {
+      updateData.installationQualification = new Date(
+        installationQualification
+      );
     }
 
-    if (req.files) {
-      if (req.files.installationQualification) {
-        updateData.installationQualification = req.files.installationQualification[0].path;
-      }
-      if (req.files.operationalQualification) {
-        updateData.operationalQualification = req.files.operationalQualification[0].path;
-      }
-      if (req.files.performanceQualification) {
-        updateData.performanceQualification = req.files.performanceQualification[0].path;
-      }
+    if (operationalQualification) {
+      updateData.operationalQualification = new Date(
+        operationalQualification
+      );
+    }
+
+    if (performanceQualification) {
+      updateData.performanceQualification = new Date(
+        performanceQualification
+      );
     }
 
     const equipment = await prisma.equipment.update({
       where: { id },
-      data: updateData
+      data: updateData,
     });
 
     return res.status(200).json({
       success: true,
       message: 'Equipment updated successfully',
-      data: equipment
+      data: equipment,
     });
-
   } catch (error) {
     next(error);
   }

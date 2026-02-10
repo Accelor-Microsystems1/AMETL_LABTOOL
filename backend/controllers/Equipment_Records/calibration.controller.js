@@ -16,7 +16,6 @@ const getCalibrationsByEquipmentId = (prisma) => async (req, res, next) => {
       where: { equipmentId },
       orderBy: { dateOfCalibration: 'desc' }
     });
-
     return res.status(200).json({
       success: true,
       message: 'Calibration records fetched successfully',
@@ -71,9 +70,7 @@ const createCalibration = (prisma) => async (req, res, next) => {
       dueDate,
       calibrationResult,
       certificateNo,
-      createdBy
     } = req.body;
-
     if (!dateOfCalibration || !dueDate || !calibrationResult || !certificateNo) {
       return res.status(400).json({
         success: false,
@@ -115,7 +112,6 @@ const createCalibration = (prisma) => async (req, res, next) => {
         calibrationResult,
         certificateNo,
         certificateFile,
-        createdBy: createdBy || null
       }
     });
 

@@ -70,8 +70,7 @@ const createMaintenance = (prisma) => async (req, res, next) => {
       plannedDateOfMaintenance,
       conditionBasedNextMaintenance,
       status,
-      remark,
-      createdBy
+      remark,      
     } = req.body;
 
     if (!plannedDateOfMaintenance || !status) {
@@ -111,7 +110,6 @@ const createMaintenance = (prisma) => async (req, res, next) => {
           : null,
         status,
         remark: remark || null,
-        createdBy: createdBy || null
       }
     });
 

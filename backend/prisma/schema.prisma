@@ -28,7 +28,6 @@ enum RequestStatus {
   REJECTED
 }
 
-
 enum EquipmentStatus {
   ACTIVE
   INACTIVE
