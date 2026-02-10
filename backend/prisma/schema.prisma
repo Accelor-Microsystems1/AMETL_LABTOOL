@@ -92,6 +92,7 @@ model UutRecord {
   srNo         Int?
   traceId      String?  @unique
   outs         UutOut[]
+  uutTests     UutRecordTest[] 
 
   @@unique([uutInDate, serialOfDay])
   @@index([uutInDate])
@@ -110,6 +111,22 @@ model UutOut {
   uutRecord   UutRecord @relation(fields: [uutRecordId], references: [id])
 }
 
+model UutRecordTest {
+  id          String     @id @default(uuid())
+  uutRecordId String
+  testId      Int
+  testName    String   
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+
+  uutRecord   UutRecord  @relation(fields: [uutRecordId], references: [id], onDelete: Cascade)
+  test        Test       @relation(fields: [testId], references: [id])
+
+  @@index([uutRecordId])
+  @@index([testId])
+  @@index([status])
+}
+
 model Project {
   id          Int             @id @default(autoincrement())
   projectName String          @unique @db.VarChar(100)
@@ -126,6 +143,7 @@ model Test {
   createdAt   DateTime        @default(now())
   updatedAt   DateTime        @default(now())
   projectTests ProjectTest[]
+  uutTests     UutRecordTest[]
 }
 
 model ProjectTest {

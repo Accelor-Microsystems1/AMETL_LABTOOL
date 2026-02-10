@@ -14,12 +14,19 @@ const RequestFormView = () => {
   const [rejectionReason, setRejectionReason] = useState("");
   const [isProcessing, setIsProcessing] = useState(false);
 
-  // Fetch all requests
+  // ✅ Helper function to get auth headers
+  const getAuthHeaders = () => {
+    const token = sessionStorage.getItem("token");
+    return {
+      "Content-Type": "application/json",
+      "Authorization": `Bearer ${token}`
+    };
+  };
+
   useEffect(() => {
     fetchRequests();
   }, []);
 
-  // Filter requests by status
   useEffect(() => {
     if (activeTab === "ALL") {
       setFilteredRequests(requests);
@@ -28,10 +35,13 @@ const RequestFormView = () => {
     }
   }, [activeTab, requests]);
 
+  // ✅ FIXED - Added auth header
   const fetchRequests = async () => {
     setIsLoading(true);
     try {
-      const response = await fetch(`${API_BASE_URL}/test-requests`);
+      const response = await fetch(`${API_BASE_URL}/test-requests`, {
+        headers: getAuthHeaders()
+      });
       const result = await response.json();
 
       if (result.success) {
@@ -44,23 +54,21 @@ const RequestFormView = () => {
     }
   };
 
-  // Handle Approve
   const handleApprove = async (id) => {
     setIsProcessing(true);
     try {
       const response = await fetch(`${API_BASE_URL}/test-requests/${id}/status`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
+        method: "PUT",
+        headers: getAuthHeaders(),
         body: JSON.stringify({
           status: "APPROVED",
-          approvedBy: "HOD Name" // Replace with logged-in user
+          approvedBy: "HOD Name"
         })
       });
 
       const result = await response.json();
 
       if (result.success) {
-        // Update local state
         setRequests((prev) =>
           prev.map((req) =>
             req.id === id ? { ...req, status: "APPROVED" } : req
@@ -76,7 +84,6 @@ const RequestFormView = () => {
     }
   };
 
-  // Handle Reject
   const handleReject = async () => {
     if (!rejectionReason.trim()) {
       alert("Please provide a rejection reason");
@@ -88,8 +95,8 @@ const RequestFormView = () => {
       const response = await fetch(
         `${API_BASE_URL}/test-requests/${selectedRequest.id}/status`,
         {
-          method: "PATCH",
-          headers: { "Content-Type": "application/json" },
+          method: "PUT",
+          headers: getAuthHeaders(),
           body: JSON.stringify({
             status: "REJECTED",
             rejectionReason: rejectionReason
@@ -119,6 +126,9 @@ const RequestFormView = () => {
       setIsProcessing(false);
     }
   };
+
+  // ... rest of your component stays the same (JSX part)
+  // Keep everything from openRejectModal onwards unchanged
 
   // Open reject modal
   const openRejectModal = (request) => {

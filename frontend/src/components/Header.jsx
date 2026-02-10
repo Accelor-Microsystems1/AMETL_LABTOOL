@@ -33,11 +33,6 @@ const Header = () => {
         roles: ["MANAGER", "HOD", "ADMIN", "TESTENGINEER"],
       },
       {
-        path: "/equipment_details",
-        label: "Equipment Details",
-        roles: ["MANAGER", "HOD", "TESTENGINEER"],
-      },
-      {
         path: "/list_of_employees",
         label: "List of Employees",
         roles: ["HOD"],

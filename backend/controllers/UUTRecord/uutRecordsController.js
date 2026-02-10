@@ -541,6 +541,138 @@ const getStats = (prisma) => async (req, res) => {
   }
 };
 
+// Get all unique project names for dropdown
+const getProjectNames = (prisma) => async (req, res) => {
+  try {
+    const projects = await prisma.uutRecord.findMany({
+      distinct: ["projectName"],
+      select: {
+        projectName: true,
+      },
+      orderBy: {
+        projectName: "asc",
+      },
+    });
+
+    const projectNames = projects
+      .filter(p => p.projectName && p.projectName.trim())
+      .map(p => p.projectName);
+
+    res.json({
+      success: true,
+      data: projectNames,
+    });
+  } catch (error) {
+    console.error("Error fetching project names:", error);
+    res.status(500).json({
+      success: false,
+      error: error.message,
+    });
+  }
+};
+
+// Get all serial numbers for a specific project
+const getSerialNumbersByProject = (prisma) => async (req, res) => {
+  try {
+    const { projectName } = req.params;
+
+    if (!projectName) {
+      return res.status(400).json({
+        success: false,
+        error: "Project name is required",
+      });
+    }
+
+    const records = await prisma.uutRecord.findMany({
+      where: {
+        projectName: {
+          equals: projectName,
+          mode: "insensitive",
+        },
+      },
+      select: {
+        serialNo: true,
+        customerName: true,
+        testTypeName: true,
+        uutType: true,
+      },
+      orderBy: {
+        serialNo: "asc",
+      },
+    });
+
+    const serialNumbers = records.map(r => ({
+      serialNo: r.serialNo,
+      customerName: r.customerName,
+      testTypeName: r.testTypeName,
+      uutType: r.uutType,
+    }));
+
+    res.json({
+      success: true,
+      data: serialNumbers,
+    });
+  } catch (error) {
+    console.error("Error fetching serial numbers by project:", error);
+    res.status(500).json({
+      success: false,
+      error: error.message,
+    });
+  }
+};
+
+// Get project for a specific serial number
+const getProjectBySerialNumber = (prisma) => async (req, res) => {
+  try {
+    const { serialNo } = req.params;
+
+    if (!serialNo) {
+      return res.status(400).json({
+        success: false,
+        error: "Serial number is required",
+      });
+    }
+
+    const record = await prisma.uutRecord.findFirst({
+      where: {
+        serialNo: {
+          equals: serialNo,
+          mode: "insensitive",
+        },
+      },
+      select: {
+        projectName: true,
+        serialNo: true,
+        customerName: true,
+        customerCode: true,
+        testTypeName: true,
+        testTypeCode: true,
+        uutType: true,
+        uutQty: true,
+        contactPersonName: true,
+      },
+    });
+
+    if (!record) {
+      return res.status(404).json({
+        success: false,
+        error: "Serial number not found",
+      });
+    }
+
+    res.json({
+      success: true,
+      data: record,
+    });
+  } catch (error) {
+    console.error("Error fetching project by serial number:", error);
+    res.status(500).json({
+      success: false,
+      error: error.message,
+    });
+  }
+};
+
 module.exports = {
   getAllRecords,
   getRecordById,
@@ -551,4 +683,7 @@ module.exports = {
   checkoutRecord,
   deleteRecord,
   getStats,
+  getProjectNames,
+  getSerialNumbersByProject,
+  getProjectBySerialNumber,
 };
