@@ -17,12 +17,13 @@ const UutIn = () => {
   const [loading, setLoading] = useState(false);
   const [showConfirmModal, setShowConfirmModal] = useState(false);
   const [previewData, setPreviewData] = useState(null);
+  const [serialVerified, setSerialVerified] = useState(false);
+  const [serialVerificationMessage, setSerialVerificationMessage] = useState("");
   
   const {
     projectNames,
-    serialNumbers,
-    fetchSerialNumbersByProject,
-    fetchDetailsBySerialNumber,
+    loading: fetchLoading,
+    searchSerialInProject,
   } = useDependentDropdowns();
 
   const [form, setForm] = useState({
@@ -63,40 +64,53 @@ const UutIn = () => {
   };
 
   // Handle project name change
-  const handleProjectChange = async (e) => {
+  const handleProjectChange = (e) => {
     const projectName = e.target.value;
-    setForm(prev => ({ ...prev, projectName, serialNo: "" }));
-    
-    if (projectName) {
-      await fetchSerialNumbersByProject(projectName);
-    }
+    setForm(prev => ({ ...prev, projectName }));
   };
 
-  // Handle serial number change - auto-fill form
-  const handleSerialNumberChange = async (e) => {
+  // Handle serial number change - only update state
+  const handleSerialNumberChange = (e) => {
     const serialNo = e.target.value;
     setForm(prev => ({ ...prev, serialNo }));
+  };
 
-    if (serialNo) {
+  // Handle serial number blur - search and auto-fill form when user leaves field
+  const handleSerialNumberBlur = async () => {
+    const { serialNo, projectName } = form;
+
+    if (serialNo && projectName) {
       try {
-        const details = await fetchDetailsBySerialNumber(serialNo);
+        const details = await searchSerialInProject(projectName, serialNo);
         if (details) {
-          // Auto-fill form with details from serial number
+          // Auto-fill form with details from matched request
           setForm(prev => ({
             ...prev,
             serialNo,
-            projectName: details.projectName || prev.projectName,
-            customerName: details.customerName || prev.customerName,
-            testTypeName: details.testTypeName || prev.testTypeName,
-            testTypeCode: details.testTypeCode || prev.testTypeCode,
-            uutType: details.uutType || prev.uutType,
-            contactPersonName: details.contactPersonName || prev.contactPersonName,
+            projectName: details.projectName,
+            customerName: details.customerName,
+            testTypeName: details.testTypeName,
+            testTypeCode: details.testTypeCode,
+            uutType: details.uutType,
+            contactPersonName: details.contactPersonName,
           }));
-          toast.success("Form auto-filled with serial number details");
+          setSerialVerified(true);
+          setSerialVerificationMessage("✓ Serial number verified");
+          toast.success("Serial number matched! Form auto-filled");
+        } else {
+          setSerialVerified(false);
+          setSerialVerificationMessage("✗ Serial number not found in selected project");
+          toast.error("Serial number not found in selected project");
         }
       } catch (error) {
-        toast.error("Failed to fetch serial number details");
+        setSerialVerified(false);
+        setSerialVerificationMessage("✗ Error verifying serial number");
+        console.error("Error searching serial:", error);
+        toast.error("Failed to search serial number");
       }
+    } else if (!serialNo) {
+      setSerialVerified(false);
+      setSerialVerificationMessage("");
     }
   };
 
@@ -282,23 +296,6 @@ const UutIn = () => {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-slate-700 mb-1">
-                Serial No. <span className="text-red-500">*</span>
-              </label>
-              <select
-                value={form.serialNo}
-                onChange={handleSerialNumberChange}
-                className="w-full px-4 py-2 border border-slate-300 rounded-xl focus:ring-2 focus:ring-amber-500 focus:border-amber-500 outline-none"
-              >
-                <option value="">-- Select Serial Number --</option>
-                {serialNumbers.map((item) => (
-                  <option key={item.serialNo} value={item.serialNo}>
-                    {item.serialNo}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">
                 Project Name <span className="text-red-500">*</span>
               </label>
               <select
@@ -313,6 +310,29 @@ const UutIn = () => {
                   </option>
                 ))}
               </select>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-1">
+                Serial No. <span className="text-red-500">*</span>
+              </label>
+              <input
+                type="text"
+                value={form.serialNo}
+                onChange={handleSerialNumberChange}
+                onBlur={handleSerialNumberBlur}
+                placeholder="Enter serial number"
+                className="w-full px-4 py-2 border border-slate-300 rounded-xl focus:ring-2 focus:ring-amber-500 focus:border-amber-500 outline-none"
+              />
+              {form.projectName && !serialVerificationMessage && (
+                <p className="text-xs text-slate-500 mt-1">
+                  Type serial number and press Tab or click elsewhere to search
+                </p>
+              )}
+              {serialVerificationMessage && (
+                <span className={`text-xs mt-1 block ${serialVerified ? 'text-green-600' : 'text-red-600'}`}>
+                  {serialVerificationMessage}
+                </span>
+              )}
             </div>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -470,8 +490,9 @@ const UutIn = () => {
             <button
               type="button"
               onClick={handlePreview}
-              disabled={loading}
+              disabled={!serialVerified || loading}
               className="px-6 py-2.5 bg-amber-600 text-white rounded-xl font-semibold hover:bg-amber-700 disabled:opacity-50 disabled:cursor-not-allowed"
+              title={!serialVerified ? "Please verify serial number first" : ""}
             >
               {loading ? "Processing..." : "Create"}
             </button>
