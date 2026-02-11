@@ -683,3 +683,693 @@ const HistoryModal = ({ record, onClose }) => {
 };
 
 export default UutRecords;
+
+// pages/UutRecords.jsx
+
+// import React, { useState, useEffect, useMemo } from "react";
+// import { useNavigate } from "react-router-dom";
+// import { useAuth } from "../../components/authentication/authContext";
+// import { useISTDate } from "../../hooks/timeZoneConvertor";
+// import {
+//   FaHistory,
+//   FaBoxOpen,
+//   FaSync,
+//   FaExclamationTriangle,
+//   FaFlask,
+//   FaTimes,
+//   FaPlus,
+// } from "react-icons/fa";
+// import { FiPackage, FiInbox, FiCheckCircle, FiClock } from "react-icons/fi";
+// import { IoClose } from "react-icons/io5";
+
+// const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
+
+// const UutRecords = () => {
+//   const navigate = useNavigate();
+//   const { user } = useAuth();
+//   const isAdmin = user?.role === "ADMIN";
+
+//   const [records, setRecords] = useState([]);
+//   const [stats, setStats] = useState(null);
+//   const [loading, setLoading] = useState(true);
+//   const [searchTerm, setSearchTerm] = useState("");
+//   const [activeFilter, setActiveFilter] = useState("in-lab");
+//   const [currentPage, setCurrentPage] = useState(1);
+//   const recordsPerPage = 10;
+//   const { formatDateTime } = useISTDate();
+
+//   const [modalState, setModalState] = useState({
+//     checkout: false,
+//     history: false,
+//     tests: false,
+//     selectedRecord: null,
+//   });
+
+//   const getSumOfOuts = (record) => {
+//     if (!record || !record.outs || !Array.isArray(record.outs)) return 0;
+//     return record.outs.reduce(
+//       (total, item) => total + (Number(item.outQty) || 0),
+//       0
+//     );
+//   };
+
+//   const getRemainingQty = (record) => {
+//     const totalIn = Number(record.uutQty) || 0;
+//     const totalOut = getSumOfOuts(record);
+//     return totalIn - totalOut;
+//   };
+
+//   const isFullyCheckedOut = (record) => {
+//     return getRemainingQty(record) <= 0;
+//   };
+
+//   const fetchRecords = async () => {
+//     setLoading(true);
+//     try {
+//       const token = localStorage.getItem("token");
+//       let url = `${API_BASE_URL}/uut-records?_t=${Date.now()}`;
+//       if (searchTerm) url += `&search=${encodeURIComponent(searchTerm)}`;
+
+//       const response = await fetch(url, {
+//         headers: { Authorization: `Bearer ${token}` },
+//       });
+//       const data = await response.json();
+
+//       if (data.success) {
+//         setRecords(
+//           data.data.map((r) => ({
+//             ...r,
+//             outs: r.outs || [],
+//             uutTests: r.uutTests || [],
+//           }))
+//         );
+//       }
+//     } catch (error) {
+//       console.error(error);
+//     } finally {
+//       setLoading(false);
+//     }
+//   };
+
+//   const fetchStats = async () => {
+//     try {
+//       const token = localStorage.getItem("token");
+//       const res = await fetch(`${API_BASE_URL}/uut-records/stats`, {
+//         headers: { Authorization: `Bearer ${token}` },
+//       });
+//       const data = await res.json();
+//       if (data.success) setStats(data.data);
+//     } catch (error) {
+//       console.error(error);
+//     }
+//   };
+
+//   const filteredRecords = useMemo(() => {
+//     let result = [...records];
+//     if (activeFilter === "in-lab") {
+//       result = result.filter((r) => !isFullyCheckedOut(r));
+//     } else if (activeFilter === "checked-out") {
+//       result = result.filter((r) => isFullyCheckedOut(r));
+//     }
+//     return result.sort((a, b) => new Date(b.uutInDate) - new Date(a.uutInDate));
+//   }, [records, activeFilter]);
+
+//   const paginatedRecords = useMemo(() => {
+//     const start = (currentPage - 1) * recordsPerPage;
+//     return filteredRecords.slice(start, start + recordsPerPage);
+//   }, [filteredRecords, currentPage]);
+
+//   const totalPages = Math.ceil(filteredRecords.length / recordsPerPage);
+
+//   useEffect(() => {
+//     fetchRecords();
+//     fetchStats();
+//   }, [searchTerm]);
+
+//   const handleRefresh = () => {
+//     fetchRecords();
+//     fetchStats();
+//   };
+
+//   const openModal = (type, record) => {
+//     setModalState({
+//       ...modalState,
+//       [type]: true,
+//       selectedRecord: record,
+//     });
+//   };
+
+//   const closeModal = (type) => {
+//     setModalState({ ...modalState, [type]: false, selectedRecord: null });
+//   };
+
+//   return (
+//     <div className="max-w-screen-2xl mx-auto bg-gray-900 px-6 py-8">
+//       {/* Header */}
+//       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8">
+//         <div className="flex items-center gap-3">
+//           <h1 className="text-2xl font-bold text-gray-200">Unit Tracker</h1>
+//           <button
+//             onClick={handleRefresh}
+//             className="p-2 rounded-lg bg-gray-100 hover:bg-gray-200 text-gray-600 transition"
+//             title="Refresh"
+//           >
+//             <FaSync size={14} />
+//           </button>
+//         </div>
+//         {isAdmin && (
+//           <button
+//             onClick={() => navigate("/units/in")}
+//             className="px-5 py-2.5 bg-amber-600 hover:bg-amber-700 text-white text-sm font-semibold rounded-lg shadow-sm transition flex items-center gap-2"
+//           >
+//             + Add New Unit
+//           </button>
+//         )}
+//       </div>
+
+//       {/* Stats */}
+//       {stats && (
+//         <div className="grid grid-cols-2 lg:grid-cols-4 gap-6 mb-10">
+//           <StatCard
+//             label="Total Units"
+//             value={stats.totalRecords}
+//             icon={FiPackage}
+//             color="text-gray-700"
+//             bg="bg-gray-200/60"
+//           />
+//           <StatCard
+//             label="In Lab"
+//             value={stats.inLab}
+//             icon={FiInbox}
+//             color="text-amber-600"
+//             bg="bg-amber-100"
+//           />
+//           <StatCard
+//             label="Checked Out"
+//             value={stats.checkedOut}
+//             icon={FiCheckCircle}
+//             color="text-green-600"
+//             bg="bg-green-100"
+//           />
+//           <StatCard
+//             label="Today"
+//             value={stats.todayRecords}
+//             icon={FiClock}
+//             color="text-blue-600"
+//             bg="bg-blue-100"
+//           />
+//         </div>
+//       )}
+
+//       {/* Filters */}
+//       <div className="bg-white rounded-xl border border-gray-200 p-5 mb-6">
+//         <div className="flex flex-col md:flex-row gap-4 justify-between items-center">
+//           <div className="flex gap-2">
+//             {["in-lab", "checked-out", "all"].map((filter) => (
+//               <button
+//                 key={filter}
+//                 onClick={() => {
+//                   setActiveFilter(filter);
+//                   setCurrentPage(1);
+//                 }}
+//                 className={`px-4 py-2 text-xs font-semibold rounded-lg transition ${
+//                   activeFilter === filter
+//                     ? "bg-amber-600 text-white"
+//                     : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+//                 }`}
+//               >
+//                 {filter.replace("-", " ").toUpperCase()}
+//               </button>
+//             ))}
+//           </div>
+//           <input
+//             type="text"
+//             placeholder="Search by code, challan, project..."
+//             value={searchTerm}
+//             onChange={(e) => setSearchTerm(e.target.value)}
+//             className="w-full md:w-80 px-4 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-amber-500"
+//           />
+//         </div>
+//       </div>
+
+//       {/* Table */}
+//       <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden shadow-lg">
+//         {loading ? (
+//           <div className="py-16 text-center text-gray-500">Loading records...</div>
+//         ) : paginatedRecords.length === 0 ? (
+//           <div className="py-16 text-center text-gray-500 bg-gray-50">
+//             No records found
+//           </div>
+//         ) : (
+//           <>
+//             <div className="overflow-x-auto">
+//               <table className="w-full text-sm">
+//                 <thead className="bg-gray-50 border-b border-gray-200">
+//                   <tr>
+//                     <Th className="text-center w-16">Sr.</Th>
+//                     <Th>UUT Code</Th>
+//                     <Th>Challan</Th>
+//                     <Th>Project / Serial</Th>
+//                     <Th>Tests</Th>
+//                     <Th>In Date</Th>
+//                     <Th className="text-center">Qty</Th>
+//                     <Th>Customer</Th>
+//                     <Th className="text-center">Remaining</Th>
+//                     <Th className="text-center">Status</Th>
+//                     <Th className="text-center">Actions</Th>
+//                   </tr>
+//                 </thead>
+//                 <tbody className="divide-y divide-gray-200">
+//                   {paginatedRecords.map((record, index) => {
+//                     const serialNumber =
+//                       (currentPage - 1) * recordsPerPage + index + 1;
+//                     const remaining = getRemainingQty(record);
+//                     const isComplete = remaining <= 0;
+//                     const tests = record.uutTests || [];
+
+//                     return (
+//                       <tr key={record.id} className="hover:bg-gray-50 transition">
+//                         <Td className="text-center font-medium text-gray-600">
+//                           {serialNumber}
+//                         </Td>
+//                         <Td className="font-mono font-semibold text-gray-900">
+//                           {record.uutCode}
+//                         </Td>
+//                         <Td>{record.challanNo || "—"}</Td>
+//                         <Td>
+//                           <div className="font-medium text-gray-900">
+//                             {record.projectName}
+//                           </div>
+//                           <div className="text-xs text-gray-500">
+//                             {record.serialNo}
+//                           </div>
+//                         </Td>
+
+//                         {/* Tests Column */}
+//                         <Td>
+//                           <div className="flex flex-wrap gap-1">
+//                             {tests.length === 0 ? (
+//                               <span className="text-gray-400 text-xs italic">
+//                                 No tests
+//                               </span>
+//                             ) : (
+//                               <>
+//                                 {tests.slice(0, 2).map((ut) => (
+//                                   <TestBadge key={ut.id} testName={ut.testName} />
+//                                 ))}
+//                                 {tests.length > 2 && (
+//                                   <button
+//                                     onClick={() => openModal("tests", record)}
+//                                     className="px-2 py-0.5 bg-gray-100 text-gray-600 rounded text-xs hover:bg-gray-200 transition"
+//                                   >
+//                                     +{tests.length - 2}
+//                                   </button>
+//                                 )}
+//                               </>
+//                             )}
+//                           </div>
+//                         </Td>
+
+//                         <Td>{formatDateTime(record.uutInDate)}</Td>
+//                         <Td className="text-center font-semibold">
+//                           {record.uutQty}
+//                         </Td>
+//                         <Td className="font-medium">{record.customerName}</Td>
+//                         <Td className="text-center">
+//                           <span
+//                             className={`inline-block px-3 py-1 rounded-full text-xs font-bold ${
+//                               remaining > 0
+//                                 ? "bg-amber-100 text-amber-800 border border-amber-300"
+//                                 : "bg-green-100 text-green-800 border border-green-300"
+//                             }`}
+//                           >
+//                             {remaining} / {record.uutQty}
+//                           </span>
+//                         </Td>
+//                         <Td className="text-center">
+//                           <span
+//                             className={`inline-block px-3 py-1 rounded-full text-xs font-bold ${
+//                               isComplete
+//                                 ? "bg-green-100 text-green-800 border border-green-300"
+//                                 : "bg-gray-100 text-gray-700 border border-gray-300"
+//                             }`}
+//                           >
+//                             {isComplete ? "OUT" : "IN LAB"}
+//                           </span>
+//                         </Td>
+//                         <Td className="text-center">
+//                           <div className="flex items-center justify-center gap-2 text-xs">
+//                             {tests.length > 0 && (
+//                               <button
+//                                 onClick={() => openModal("tests", record)}
+//                                 className="text-blue-600 hover:text-blue-800 flex items-center gap-1"
+//                                 title="View Tests"
+//                               >
+//                                 <FaFlask size={12} />
+//                                 {tests.length}
+//                               </button>
+//                             )}
+//                             {!isComplete && isAdmin && (
+//                               <button
+//                                 onClick={() => openModal("checkout", record)}
+//                                 className="text-amber-700 hover:text-amber-900 font-semibold flex items-center gap-1"
+//                               >
+//                                 <FaBoxOpen size={12} /> Out
+//                               </button>
+//                             )}
+//                             {getSumOfOuts(record) > 0 && (
+//                               <button
+//                                 onClick={() => openModal("history", record)}
+//                                 className="text-gray-600 hover:text-gray-900 flex items-center gap-1"
+//                               >
+//                                 <FaHistory size={12} />
+//                               </button>
+//                             )}
+//                           </div>
+//                         </Td>
+//                       </tr>
+//                     );
+//                   })}
+//                 </tbody>
+//               </table>
+//             </div>
+
+//             {/* Pagination */}
+//             <div className="bg-gray-50 border-t border-gray-200 px-6 py-4 flex items-center justify-between text-sm">
+//               <span className="text-gray-600">
+//                 Page {currentPage} of {totalPages}
+//               </span>
+//               <div className="flex gap-2">
+//                 <button
+//                   onClick={() => setCurrentPage((p) => p - 1)}
+//                   disabled={currentPage === 1}
+//                   className="px-4 py-2 border border-gray-300 rounded-lg bg-white disabled:opacity-50 hover:bg-gray-50 transition"
+//                 >
+//                   Previous
+//                 </button>
+//                 <button
+//                   onClick={() => setCurrentPage((p) => p + 1)}
+//                   disabled={currentPage === totalPages}
+//                   className="px-4 py-2 border border-gray-300 rounded-lg bg-white disabled:opacity-50 hover:bg-gray-50 transition"
+//                 >
+//                   Next
+//                 </button>
+//               </div>
+//             </div>
+//           </>
+//         )}
+//       </div>
+
+//       {/* Modals */}
+//       {modalState.tests && (
+//         <TestsModal
+//           record={modalState.selectedRecord}
+//           onClose={() => closeModal("tests")}
+//         />
+//       )}
+//       {isAdmin && modalState.checkout && (
+//         <CheckoutModal
+//           record={modalState.selectedRecord}
+//           onClose={() => closeModal("checkout")}
+//           onSuccess={() => {
+//             closeModal("checkout");
+//             handleRefresh();
+//           }}
+//           getRemainingQty={getRemainingQty}
+//         />
+//       )}
+//       {modalState.history && (
+//         <HistoryModal
+//           record={modalState.selectedRecord}
+//           onClose={() => closeModal("history")}
+//         />
+//       )}
+//     </div>
+//   );
+// };
+
+// // ==================== COMPONENTS ====================
+
+// const Th = ({ children, className = "" }) => (
+//   <th
+//     className={`px-4 py-3 text-left text-xs font-bold text-gray-600 uppercase tracking-wider ${className}`}
+//   >
+//     {children}
+//   </th>
+// );
+
+// const Td = ({ children, className = "" }) => (
+//   <td className={`px-4 py-3 text-sm ${className}`}>{children}</td>
+// );
+
+// const TestBadge = ({ testName }) => (
+//   <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-blue-100 text-blue-700 rounded-full text-xs font-medium">
+//     <FaFlask size={8} />
+//     {testName}
+//   </span>
+// );
+
+// const StatCard = ({ label, value, icon: Icon, color, bg }) => (
+//   <div className="p-6 rounded-2xl border border-gray-200 bg-linear-to-br from-gray-50 to-gray-100 shadow-md flex items-center justify-between gap-6">
+//     <div>
+//       <div className="text-xs font-semibold text-gray-600 uppercase tracking-wider">
+//         {label}
+//       </div>
+//       <div className="text-3xl font-bold text-gray-900 mt-1">{value}</div>
+//     </div>
+//     <div className={`p-3 rounded-2xl ${bg} shadow-lg`}>
+//       <Icon size={24} className={color} />
+//     </div>
+//   </div>
+// );
+
+// // Tests Modal
+// const TestsModal = ({ record, onClose }) => {
+//   const tests = record?.uutTests || [];
+
+//   return (
+//     <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+//       <div className="bg-white rounded-2xl shadow-xl max-w-md w-full">
+//         <div className="flex justify-between items-center p-5 border-b border-gray-200">
+//           <div>
+//             <h3 className="text-lg font-bold text-gray-900">Tests</h3>
+//             <p className="text-sm text-gray-500">{record?.uutCode}</p>
+//           </div>
+//           <button
+//             onClick={onClose}
+//             className="text-gray-400 hover:text-gray-600 transition"
+//           >
+//             <IoClose size={24} />
+//           </button>
+//         </div>
+
+//         <div className="p-5">
+//           {tests.length === 0 ? (
+//             <div className="text-center py-8 text-gray-500">
+//               No tests linked to this UUT
+//             </div>
+//           ) : (
+//             <div className="space-y-2">
+//               {tests.map((ut, index) => (
+//                 <div
+//                   key={ut.id || index}
+//                   className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg"
+//                 >
+//                   <div className="p-2 bg-blue-100 rounded-lg">
+//                     <FaFlask className="text-blue-600" size={14} />
+//                   </div>
+//                   <div>
+//                     <div className="font-medium text-gray-900">{ut.testName}</div>
+//                     {ut.testId > 0 && (
+//                       <div className="text-xs text-gray-500">
+//                         Test ID: {ut.testId}
+//                       </div>
+//                     )}
+//                   </div>
+//                 </div>
+//               ))}
+//             </div>
+//           )}
+//         </div>
+
+//         <div className="p-5 border-t border-gray-200">
+//           <button
+//             onClick={onClose}
+//             className="w-full px-4 py-2.5 bg-gray-100 text-gray-700 rounded-xl font-medium hover:bg-gray-200 transition"
+//           >
+//             Close
+//           </button>
+//         </div>
+//       </div>
+//     </div>
+//   );
+// };
+
+// // Checkout Modal
+// const CheckoutModal = ({ record, onClose, onSuccess, getRemainingQty }) => {
+//   const [outQty, setOutQty] = useState(1);
+//   const [outDate, setOutDate] = useState(
+//     () => new Date().toISOString().split("T")[0]
+//   );
+//   const [loading, setLoading] = useState(false);
+
+//   const remaining = getRemainingQty(record);
+//   const today = new Date().toISOString().split("T")[0];
+
+//   const handleSubmit = async () => {
+//     if (outQty < 1 || outQty > remaining) {
+//       alert(`Only ${remaining} unit(s) remaining.`);
+//       return;
+//     }
+
+//     setLoading(true);
+//     const token = localStorage.getItem("token");
+
+//     try {
+//       const res = await fetch(
+//         `${API_BASE_URL}/uut-records/${record.id}/checkout`,
+//         {
+//           method: "PUT",
+//           headers: {
+//             "Content-Type": "application/json",
+//             Authorization: `Bearer ${token}`,
+//           },
+//           body: JSON.stringify({ outDate, outQty: Number(outQty) }),
+//         }
+//       );
+
+//       const data = await res.json();
+
+//       if (data.success) {
+//         onSuccess();
+//       } else {
+//         alert(data.error || "Checkout failed");
+//       }
+//     } catch (e) {
+//       alert("Network error");
+//     } finally {
+//       setLoading(false);
+//     }
+//   };
+
+//   return (
+//     <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4">
+//       <div className="bg-white rounded-2xl shadow-xl max-w-md w-full p-6">
+//         <button
+//           onClick={onClose}
+//           className="absolute top-4 right-4 text-gray-400 hover:text-gray-600"
+//         >
+//           <IoClose size={24} />
+//         </button>
+
+//         <h3 className="text-xl font-bold text-gray-900 mb-4">Checkout Unit</h3>
+
+//         <div className="bg-gray-50 rounded-lg p-4 mb-4 text-sm">
+//           <div className="flex justify-between">
+//             <span>Code:</span>
+//             <strong>{record.uutCode}</strong>
+//           </div>
+//           <div className="flex justify-between mt-2">
+//             <span>Remaining:</span>
+//             <strong className="text-amber-700">{remaining}</strong>
+//           </div>
+//         </div>
+
+//         <div className="space-y-4">
+//           <div>
+//             <label className="block text-sm font-medium mb-1">
+//               Quantity (max {remaining})
+//             </label>
+//             <input
+//               type="number"
+//               min="1"
+//               max={remaining}
+//               value={outQty}
+//               onChange={(e) => setOutQty(Number(e.target.value) || 1)}
+//               className="w-full px-4 py-2 border rounded-lg"
+//             />
+//           </div>
+
+//           <div>
+//             <label className="block text-sm font-medium mb-1">
+//               Checkout Date
+//             </label>
+//             <input
+//               type="date"
+//               value={outDate}
+//               max={today}
+//               onChange={(e) => setOutDate(e.target.value)}
+//               className="w-full px-4 py-2 border rounded-lg"
+//             />
+//           </div>
+//         </div>
+
+//         <button
+//           onClick={handleSubmit}
+//           disabled={loading}
+//           className="w-full mt-6 bg-amber-600 text-white py-2.5 rounded-lg font-semibold hover:bg-amber-700 disabled:opacity-50 transition"
+//         >
+//           {loading ? "Processing..." : "Confirm Checkout"}
+//         </button>
+//       </div>
+//     </div>
+//   );
+// };
+
+// // History Modal
+// const HistoryModal = ({ record, onClose }) => {
+//   const outs = record?.outs || [];
+//   const totalOut = outs.reduce((sum, o) => sum + Number(o.outQty), 0);
+
+//   return (
+//     <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4">
+//       <div className="bg-white rounded-2xl shadow-xl max-w-md w-full p-6">
+//         <div className="flex justify-between items-center mb-4">
+//           <h3 className="text-lg font-bold">Checkout History</h3>
+//           <button onClick={onClose} className="text-gray-400 hover:text-gray-600">
+//             <IoClose size={24} />
+//           </button>
+//         </div>
+
+//         <div className="bg-gray-50 rounded-lg p-4 mb-4">
+//           <div className="text-sm">
+//             <strong>{record?.uutCode}</strong>
+//           </div>
+//           <div className="text-xs text-gray-500 mt-1">
+//             Total Out: {totalOut} / {record?.uutQty}
+//           </div>
+//         </div>
+
+//         <div className="max-h-60 overflow-y-auto">
+//           {outs.length === 0 ? (
+//             <div className="text-center py-6 text-gray-500">No history</div>
+//           ) : (
+//             <div className="space-y-2">
+//               {outs.map((o, i) => (
+//                 <div key={i} className="flex justify-between p-3 bg-gray-50 rounded-lg text-sm">
+//                   <span>
+//                     {new Date(o.outDate).toLocaleDateString("en-IN", {
+//                       day: "2-digit",
+//                       month: "short",
+//                       year: "numeric",
+//                     })}
+//                   </span>
+//                   <span className="font-semibold">{o.outQty} units</span>
+//                 </div>
+//               ))}
+//             </div>
+//           )}
+//         </div>
+
+//         <button
+//           onClick={onClose}
+//           className="w-full mt-4 bg-gray-100 text-gray-700 py-2 rounded-lg font-medium hover:bg-gray-200 transition"
+//         >
+//           Close
+//         </button>
+//       </div>
+//     </div>
+//   );
+// };
+
+// export default UutRecords;

@@ -9,6 +9,7 @@ const {
   createRequest,
   updateRequestStatus,
   deleteRequest,
+  getApprovedRequests,
 } = require("../../controllers/Test_Request/testRequest.controller");
 
 function createTestRequestRouter(prisma) {
@@ -16,6 +17,9 @@ function createTestRequestRouter(prisma) {
 
   // Get all requests
   router.get("/", getAllRequests(prisma));
+
+  // Get approved requests
+  router.get('/approved-requests', getApprovedRequests(prisma));
 
   // Get logged-in user's requests
   router.get("/my-requests", authMiddleware, getMyRequests(prisma));

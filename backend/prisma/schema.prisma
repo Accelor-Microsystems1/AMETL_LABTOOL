@@ -74,7 +74,7 @@ model User {
 
 model UutRecord {
   id           String   @id @default(uuid())
-  serialNo     String   @unique
+  serialNo     String   
   challanNo    String
   uutInDate    DateTime
   customerName String
@@ -116,6 +116,7 @@ model UutRecordTest {
   uutRecordId String
   testId      Int
   testName    String   
+  testSpecification String?    @db.Text 
   createdAt   DateTime   @default(now())
   updatedAt   DateTime   @updatedAt
 
@@ -174,6 +175,7 @@ model TestRequest {
   previousRefNo      String?
   testLevel          String 
   testName           String
+  testId             Int?  
   testSpecification  String   @db.Text
   testStandard       String
   specialRequirement String?  

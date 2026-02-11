@@ -93,18 +93,11 @@ const stepFields = {
 };
 
 const RequestForm = () => {
-  // ============================================
-  // FORM STATES
-  // ============================================
   const [step, setStep] = useState(1);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitStatus, setSubmitStatus] = useState(null);
   const [calculatedQuantity, setCalculatedQuantity] = useState(null);
   const savedDataRef = useRef({});
-
-  // ============================================
-  // PROJECT & TEST DROPDOWN STATES
-  // ============================================
   const [projects, setProjects] = useState([]);
   const [projectTests, setProjectTests] = useState([]);
   const [selectedProjectId, setSelectedProjectId] = useState("");
@@ -112,10 +105,6 @@ const RequestForm = () => {
   const [isLoadingProjects, setIsLoadingProjects] = useState(false);
   const [isLoadingTests, setIsLoadingTests] = useState(false);
   const [isLoadingSpec, setIsLoadingSpec] = useState(false);
-
-  // ============================================
-  // REACT HOOK FORM
-  // ============================================
   const {
     register,
     trigger,
@@ -133,17 +122,11 @@ const RequestForm = () => {
   const testLevel = watch("testLevel");
   const uutSerialNo = watch("uutSerialNo");
 
-  // ============================================
-  // CALCULATE QUANTITY FROM SERIAL
-  // ============================================
   useEffect(() => {
     const quantity = calculateQuantityFromSerial(uutSerialNo);
     setCalculatedQuantity(quantity);
   }, [uutSerialNo]);
 
-  // ============================================
-  // FETCH PROJECTS ON COMPONENT MOUNT
-  // ============================================
   useEffect(() => {
     fetchProjects();
   }, []);
@@ -165,9 +148,6 @@ const RequestForm = () => {
     }
   };
 
-  // ============================================
-  // FETCH TESTS FOR SELECTED PROJECT
-  // ============================================
   const fetchProjectTests = async (projectId) => {
     if (!projectId) return;
 
@@ -194,9 +174,6 @@ const RequestForm = () => {
     }
   };
 
-  // ============================================
-  // FETCH SPECIFICATION FOR SELECTED TEST
-  // ============================================
   const fetchSpecification = async (projectTestId) => {
     if (!projectTestId) return;
 
@@ -218,9 +195,6 @@ const RequestForm = () => {
     }
   };
 
-  // ============================================
-  // HANDLE PROJECT SELECTION (Step 1)
-  // ============================================
   const handleProjectChange = (e) => {
     const projectId = e.target.value;
     console.log("Project selected:", projectId);
@@ -243,34 +217,31 @@ const RequestForm = () => {
     setValue("testSpecification", "");
   };
 
-  // ============================================
-  // HANDLE TEST SELECTION (Step 2)
-  // ============================================
-  const handleTestChange = (e) => {
-    const projectTestId = e.target.value;
-    console.log("Test selected:", projectTestId);
+const handleTestChange = (e) => {
+  const projectTestId = e.target.value;
+  console.log("Test selected:", projectTestId);
 
-    setSelectedProjectTestId(projectTestId);
+  setSelectedProjectTestId(projectTestId);
 
-    // Find test and set testName
-    const projectTest = projectTests.find(
-      (pt) => pt.id === parseInt(projectTestId)
-    );
-    if (projectTest) {
-      setValue("testName", projectTest.test.testName);
-      console.log("Test Name set to:", projectTest.test.testName);
+  const projectTest = projectTests.find(
+    (pt) => pt.id === parseInt(projectTestId)
+  );
+  
+  if (projectTest) {
+    setValue("testName", projectTest.test.testName);
+    setValue("testId", projectTest.test.id);  
+    
+    console.log("Test Name set to:", projectTest.test.testName);
+    console.log("Test ID set to:", projectTest.test.id); 
 
-      // Fetch specification for this test
-      fetchSpecification(projectTestId);
-    } else {
-      setValue("testName", "");
-      setValue("testSpecification", "");
-    }
-  };
+    fetchSpecification(projectTestId);
+  } else {
+    setValue("testName", "");
+    setValue("testId", null);  
+    setValue("testSpecification", "");
+  }
+};
 
-  // ============================================
-  // NEXT STEP
-  // ============================================
   const nextStep = async () => {
     const valid = await trigger(stepFields[step], { shouldFocus: true });
     if (!valid) return;
@@ -295,9 +266,6 @@ const RequestForm = () => {
     setStep((prev) => prev + 1);
   };
 
-  // ============================================
-  // PREVIOUS STEP
-  // ============================================
   const prevStep = () => {
     // Restore saved data
     reset(savedDataRef.current);
@@ -321,9 +289,6 @@ const RequestForm = () => {
     setStep((prev) => prev - 1);
   };
 
-  // ============================================
-  // SUBMIT FORM
-  // ============================================
   const onSubmit = async () => {
     const formData = {
       ...savedDataRef.current,
@@ -332,14 +297,12 @@ const RequestForm = () => {
     };
 
     console.log("Final submit:", formData);
-
-    // ✅ REMOVED projectId and projectTestId - Backend doesn't support them
     const backendData = {
       companyName: formData.companyName,
       companyAddress: formData.companyAddress,
       contactPerson: formData.contactPerson,
       contactNumber: formData.contactNumber,
-      customerEmail: formData.customerEmail,
+      customerEmail: formData.customerEmail?.trim(),
       uutName: formData.uutName,
       noOfUUT: formData.noOfUUT,
       dimension: formData.dimension,
@@ -353,6 +316,7 @@ const RequestForm = () => {
           ? formData.otherTestLevel
           : formData.testLevel,
       testName: formData.testName,
+      testId: formData.testId,
       testSpecification: formData.testSpecification,
       testStandard: formData.testStandard || null,
       specialRequirement: formData.specialRequirement || null,
@@ -368,9 +332,14 @@ const RequestForm = () => {
     setSubmitStatus(null);
 
     try {
+      const token = sessionStorage.getItem("token"); 
+      if (!token) throw new Error("No token found. Please login.");
       const response = await fetch(`${API_BASE_URL}/test-requests`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+       headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`, 
+      },
         body: JSON.stringify(backendData),
       });
 
@@ -403,6 +372,7 @@ const RequestForm = () => {
           testLevel: "Developmental",
           otherTestLevel: "",
           testName: "",
+          testId: null,
           testSpecification: "",
           testStandard: "",
           specialRequirement: "",
@@ -430,18 +400,12 @@ const RequestForm = () => {
     }
   };
 
-  // ============================================
-  // ERROR MESSAGE COMPONENT
-  // ============================================
   const ErrorMessage = ({ name }) => {
     return errors[name] ? (
       <p className="text-red-500 text-sm mt-1">{errors[name]?.message}</p>
     ) : null;
   };
 
-  // ============================================
-  // STEP INDICATOR COMPONENT
-  // ============================================
   const StepIndicator = () => (
     <div className="flex items-center justify-center mb-6">
       {[1, 2, 3].map((s) => (
@@ -467,9 +431,6 @@ const RequestForm = () => {
     </div>
   );
 
-  // ============================================
-  // RENDER
-  // ============================================
   return (
     <div className="min-h-screen bg-gray-900 flex items-center justify-center py-8 px-4">
       <form
@@ -482,9 +443,6 @@ const RequestForm = () => {
 
         <StepIndicator />
 
-        {/* ============================================ */}
-        {/* STEP 1: Customer & UUT Details */}
-        {/* ============================================ */}
         {step === 1 && (
           <>
             <h3 className="text-gray-200 font-semibold text-xl border-b border-gray-600 pb-2">
@@ -702,9 +660,6 @@ const RequestForm = () => {
           </>
         )}
 
-        {/* ============================================ */}
-        {/* STEP 2: Test Details */}
-        {/* ============================================ */}
         {step === 2 && (
           <>
             <h3 className="text-gray-200 font-semibold text-xl border-b border-gray-600 pb-2">
@@ -773,7 +728,7 @@ const RequestForm = () => {
                   )}
                 </label>
                 <textarea
-                  className={`input ${errors.testSpecification ? "border-red-500" : ""} min-h-[120px] resize-y bg-gray-600`}
+                  className={`input ${errors.testSpecification ? "border-red-500" : ""} min-h-30 resize-y bg-gray-600`}
                   placeholder="Auto-filled when test is selected"
                   
                   {...register("testSpecification")}
@@ -846,9 +801,6 @@ const RequestForm = () => {
           </>
         )}
 
-        {/* ============================================ */}
-        {/* STEP 3: Preview */}
-        {/* ============================================ */}
         {step === 3 && (
           <>
             <h3 className="text-gray-200 font-semibold text-xl border-b border-gray-600 pb-2">
@@ -880,9 +832,6 @@ const RequestForm = () => {
           <span className="text-red-500">*</span> All fields are required
         </p>
 
-        {/* ============================================ */}
-        {/* Navigation Buttons */}
-        {/* ============================================ */}
         <div className="flex justify-between pt-6 border-t border-gray-600">
           {step > 1 ? (
             <button
