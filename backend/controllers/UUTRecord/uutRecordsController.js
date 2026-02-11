@@ -36,6 +36,14 @@ const getAllRecords = (prisma) => async (req, res) => {
           orderBy: { outDate: "desc" },
           take: 1,
         },
+        uutTests: {  
+          select: {
+            id: true,
+            testId: true,
+            testName: true,
+            createdAt: true,
+          }
+        }
       },
       orderBy: { createdAt: "desc" },
       take: 100,
@@ -68,7 +76,10 @@ const getRecordById = (prisma) => async (req, res) => {
 
     const record = await prisma.uutRecord.findUnique({
       where: { id },
-      include: { outs: true },
+      include: { 
+        outs: true,
+        uutTests: true 
+      },
     });
 
     if (!record) {
@@ -94,8 +105,10 @@ const getRecordByIdentifier = (prisma) => async (req, res) => {
           orderBy: { outDate: "desc" },
           take: 1,
         },
+        uutTests: true  
       },
     });
+    
     if (!record) {
       return res.status(404).json({
         success: false,
@@ -125,112 +138,92 @@ const getRecordByIdentifier = (prisma) => async (req, res) => {
 
 const previewUutCode = (prisma) => async (req, res) => {
   try {
-    const {
-      serialNo,
-      challanNo,
-      uutInDate,
-      customerName,
-      testTypeName,
-      testTypeCode,
+    console.log("📍 Preview request received");
+    console.log("📍 Body:", req.body);
+    
+    const { 
+      serialNo, 
       projectName,
-      uutDescription,
-      uutType,
-      uutSrNo,
-      uutQty,
+      uutInDate, 
+      customerCode, 
+      testTypeCode, 
+      uutType 
     } = req.body;
-    if (
-      !serialNo ||
-      !customerName ||
-      !testTypeName ||
-      !testTypeCode ||
-      !projectName ||
-      !uutType
-    ) {
+    if (!serialNo || !projectName || !uutInDate || !customerCode || !testTypeCode || !uutType) {
       return res.status(400).json({
         success: false,
-        error:
-          "Missing required fields: serialNo, customerName, testTypeName, testTypeCode, projectName, uutType",
+        error: "Missing required fields"
       });
     }
 
-    if (testTypeCode.length !== 1) {
-      return res.status(400).json({
-        success: false,
-        error: "testTypeCode must be a single letter",
-      });
-    }
-
-    const existingSerial = await prisma.uutRecord.findUnique({
-      where: { serialNo },
+    const existingRecord = await prisma.uutRecord.findFirst({
+      where: {
+        projectName: projectName,
+        serialNo: serialNo
+      },
+      include: {
+        outs: true  
+      },
+      orderBy: {
+        createdAt: 'desc'
+      }
     });
 
-    if (existingSerial) {
+    console.log("🔍 Existing record check:", existingRecord ? "Found" : "Not found");
+    if (existingRecord && existingRecord.outs.length === 0) {
       return res.status(400).json({
         success: false,
-        error: `Serial No. '${serialNo}' already exists`,
+        error: `Serial "${serialNo}" for project "${projectName}" is already in lab (UUT Code: ${existingRecord.uutCode}). Please create UUT Out record before re-entry.`,
+        existingUutCode: existingRecord.uutCode,
+        code: "DUPLICATE_ENTRY"
       });
     }
+    if (existingRecord && existingRecord.outs.length > 0) {
+      console.log("✅ Re-entry allowed - UUT was dispatched");
+    }
 
-    const inDate = uutInDate ? new Date(uutInDate) : new Date();
-    const inDateDay = getStartOfDay(inDate);
-    const nextDay = new Date(inDateDay);
-    nextDay.setDate(nextDay.getDate() + 1);
+    const date = new Date(uutInDate);
+    const year = String(date.getFullYear()).slice(-2);
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
 
-    const customerCode = generateCustomerCode(customerName);
+    const startOfDay = new Date(date);
+    startOfDay.setHours(0, 0, 0, 0);
+    const endOfDay = new Date(date);
+    endOfDay.setHours(23, 59, 59, 999);
 
-    const maxSerial = await prisma.uutRecord.aggregate({
-      where: { 
+    const lastRecord = await prisma.uutRecord.findFirst({
+      where: {
         uutInDate: {
-          gte: inDateDay,
-          lt: nextDay
+          gte: startOfDay,
+          lte: endOfDay
         }
       },
-      _max: { serialOfDay: true },
+      orderBy: { serialOfDay: 'desc' }
     });
 
-    const nextSerialOfDay = (maxSerial._max.serialOfDay || 0) + 1;
+    const serialOfDay = (lastRecord?.serialOfDay || 0) + 1;
+    const serialStr = String(serialOfDay).padStart(4, '0');
+    const uutCode = `${year}/${testTypeCode}${customerCode}/${uutType}/${day}-${month}/${serialStr}`;
 
-    if (nextSerialOfDay > 9999) {
-      return res.status(400).json({
-        success: false,
-        error:
-          "Daily serial number exceeded 9999. Cannot create more records for this date.",
-      });
-    }
-
-    const uutCode = buildUutCode({
-      inDate,
-      testCode: testTypeCode.toUpperCase(),
-      customerCode,
-      uutType,
-      serialOfDay: nextSerialOfDay,
-    });
+    console.log("✅ UUT Code generated:", uutCode);
 
     res.json({
       success: true,
       data: {
-        serialNo,
-        challanNo: challanNo || null,
-        uutInDate: inDate.toISOString(),
-        customerName,
-        customerCode,
-        testTypeName,
-        testTypeCode: testTypeCode.toUpperCase(),
-        projectName,
-        uutDescription: uutDescription || null,
-        uutType,
-        uutSrNo: uutSrNo || null,
-        uutQty: Number(uutQty || 1),
-        serialOfDay: nextSerialOfDay,
         uutCode,
-      },
-      note: "This is a preview. UUT code may change if another record is created before you confirm.",
+        serialOfDay,
+        customerCode,
+        isReEntry: existingRecord ? true : false 
+      }
     });
+
   } catch (error) {
-    console.error("Error generating preview:", error);
+    console.error("❌ Preview error:", error);
     res.status(500).json({
       success: false,
-      error: error.message,
+      error: "Failed to generate preview",
+      message: error.message
     });
   }
 };
@@ -239,131 +232,208 @@ const createRecord = (prisma) => async (req, res) => {
   try {
     const {
       serialNo,
+      projectName,
       challanNo,
       uutInDate,
       customerName,
+      customerCode,
       testTypeName,
       testTypeCode,
-      projectName,
-      uutType,
       uutQty,
+      uutType,
+      contactPersonName,
       expectedUutCode,
+      tests = []
     } = req.body;
 
-    if (
-      !serialNo ||
-      !customerName ||
-      !testTypeName ||
-      !testTypeCode ||
-      !projectName ||
-      !uutType ||
-      !expectedUutCode
-    ) {
-      return res.status(400).json({
+    console.log("📍 Creating UUT Record...");
+
+    const result = await prisma.$transaction(async (tx) => {
+      
+      const existingRecord = await tx.uutRecord.findFirst({
+        where: {
+          projectName: projectName,
+          serialNo: serialNo
+        },
+        include: {
+          outs: true
+        },
+        orderBy: {
+          createdAt: 'desc'
+        }
+      });
+      if (existingRecord && existingRecord.outs.length === 0) {
+        throw {
+          code: "DUPLICATE_ENTRY",
+          message: `Serial "${serialNo}" for project "${projectName}" is already in lab.`
+        };
+      }
+      const validTests = [];
+      
+      for (const test of tests) {
+        if (!test.testId && !test.testName) continue;
+        
+        let testRecord = null;
+
+        if (test.testId) {
+          testRecord = await tx.test.findUnique({
+            where: { id: parseInt(test.testId) }
+          });
+        }
+
+        if (!testRecord && test.testName) {
+          testRecord = await tx.test.findFirst({
+            where: {
+              testName: {
+                equals: test.testName,
+                mode: 'insensitive'
+              }
+            }
+          });
+        }
+
+        if (!testRecord && test.testName) {
+          testRecord = await tx.test.create({
+            data: {
+              testName: test.testName,
+              testCode: test.testName.charAt(0).toUpperCase()
+            }
+          });
+        }
+
+        if (testRecord) {
+          validTests.push({
+            testId: testRecord.id,
+            testName: testRecord.testName,
+            testSpecification: test.testSpecification || ""
+          });
+        }
+      }
+      const date = new Date(uutInDate);
+      const year = String(date.getFullYear()).slice(-2);
+      const month = String(date.getMonth() + 1).padStart(2, '0');
+      const day = String(date.getDate()).padStart(2, '0');
+
+      const startOfDay = new Date(date);
+      startOfDay.setHours(0, 0, 0, 0);
+      const endOfDay = new Date(date);
+      endOfDay.setHours(23, 59, 59, 999);
+
+      const lastRecord = await tx.uutRecord.findFirst({
+        where: {
+          uutInDate: {
+            gte: startOfDay,
+            lte: endOfDay
+          }
+        },
+        orderBy: { serialOfDay: 'desc' }
+      });
+
+      const serialOfDay = (lastRecord?.serialOfDay || 0) + 1;
+      const serialStr = String(serialOfDay).padStart(4, '0');
+
+      const uutCode = `${year}/${testTypeCode}${customerCode}/${uutType}/${day}-${month}/${serialStr}`;
+
+      if (expectedUutCode && expectedUutCode !== uutCode) {
+        throw {
+          code: "UUT_CODE_CHANGED",
+          message: "UUT code changed due to concurrent activity"
+        };
+      }
+
+      const uutRecord = await tx.uutRecord.create({
+        data: {
+          serialNo,
+          challanNo,
+          uutInDate: date,
+          customerName,
+          customerCode,
+          testTypeName,
+          testTypeCode,
+          projectName,
+          uutQty: parseInt(uutQty),
+          uutType,
+          serialOfDay,
+          uutCode
+        }
+      });
+
+      console.log("✅ UUT Record created:", uutRecord.uutCode);
+      for (const test of validTests) {
+        await tx.uutRecordTest.create({
+          data: {
+            uutRecordId: uutRecord.id,
+            testId: test.testId,
+            testName: test.testName,
+            testSpecification: test.testSpecification
+          }
+        });
+      }
+      const testIds = validTests.map(t => t.testId);
+      
+      const updatedRequests = await tx.testRequest.updateMany({
+        where: {
+          uutName: projectName,
+          uutSerialNo: serialNo,
+          testId: { in: testIds },
+          status: "APPROVED"
+        },
+        data: {
+          status: "RECEIVED",
+          updatedAt: new Date()
+        }
+      });
+
+      console.log(`✅ Updated ${updatedRequests.count} TestRequest(s) to RECEIVED`);
+      const completeRecord = await tx.uutRecord.findUnique({
+        where: { id: uutRecord.id },
+        include: {
+          uutTests: {
+            include: { test: true }
+          }
+        }
+      });
+
+      return {
+        uutRecord: completeRecord,
+        updatedRequestsCount: updatedRequests.count,
+        isReEntry: existingRecord ? true : false
+      };
+    });
+
+    res.json({
+      success: true,
+      data: result.uutRecord,
+      updatedRequests: result.updatedRequestsCount,
+      isReEntry: result.isReEntry,
+      message: result.isReEntry 
+        ? `UUT re-entered successfully. ${result.updatedRequestsCount} request(s) marked as RECEIVED.`
+        : `UUT Record created. ${result.updatedRequestsCount} request(s) marked as RECEIVED.`
+    });
+
+  } catch (error) {
+    console.error("❌ Error:", error);
+    
+    if (error.code === "UUT_CODE_CHANGED") {
+      return res.status(409).json({
         success: false,
-        error:
-          "Missing required fields (including expectedUutCode from preview)",
+        code: "UUT_CODE_CHANGED",
+        error: error.message
       });
     }
-
-    const inDate = uutInDate ? new Date(uutInDate) : new Date();
-    const inDateDay = getStartOfDay(inDate);
-    const nextDay = new Date(inDateDay);
-    nextDay.setDate(nextDay.getDate() + 1);
-    const customerCode = generateCustomerCode(customerName);
-
-    let attempts = 0;
-    const maxAttempts = 5;
-
-    while (attempts < maxAttempts) {
-      attempts++;
-
-      try {
-        const created = await prisma.$transaction(async (tx) => {
-          const maxSerial = await tx.uutRecord.aggregate({
-            where: { 
-              uutInDate: {
-                gte: inDateDay,
-                lt: nextDay
-              }
-            },
-            _max: { serialOfDay: true },
-          });
-
-          const nextSerialOfDay = (maxSerial._max.serialOfDay || 0) + 1;
-
-          if (nextSerialOfDay > 9999) {
-            throw new Error("Daily serial exceeded 9999");
-          }
-
-          const uutCode = buildUutCode({
-            inDate,
-            testCode: testTypeCode.toUpperCase(),
-            customerCode,
-            uutType,
-            serialOfDay: nextSerialOfDay,
-          });
-
-          if (uutCode !== expectedUutCode) {
-            const err = new Error("UUT code changed. Please preview again.");
-            err.code = "UUT_CODE_CHANGED";
-            throw err;
-          }
-
-          return tx.uutRecord.create({
-            data: {
-              serialNo,
-              challanNo: challanNo || null,
-              uutInDate: inDate,
-              customerName,
-              customerCode,
-              testTypeName,
-              testTypeCode: testTypeCode.toUpperCase(),
-              projectName,
-              uutType,
-              uutQty: Number(uutQty || 1),
-              serialOfDay: nextSerialOfDay,
-              uutCode,
-              createdById: req.user?.userId,
-            },
-          });
-        });
-
-        return res.status(201).json({
-          success: true,
-          data: created,
-          message: `UUT record created successfully with code: ${created.uutCode}`,
-        });
-      } catch (error) {
-        if (error.code === "P2002") {
-          if (attempts < maxAttempts) continue;
-          return res.status(409).json({
-            success: false,
-            error: "Conflict creating record. Please try again.",
-          });
-        }
-
-        if (error.code === "UUT_CODE_CHANGED") {
-          return res.status(409).json({
-            success: false,
-            error: error.message,
-            code: "UUT_CODE_CHANGED",
-          });
-        }
-
-        throw error;
-      }
+    
+    if (error.code === "DUPLICATE_ENTRY") {
+      return res.status(400).json({
+        success: false,
+        code: "DUPLICATE_ENTRY",
+        error: error.message
+      });
     }
-
-    return res.status(409).json({
-      success: false,
-      error: "Too many concurrent requests. Please try again.",
-    });
-  } catch (error) {
-    console.error("Error creating record:", error);
+    
     res.status(500).json({
       success: false,
-      error: error.message,
+      error: "Failed to create UUT Record",
+      message: error.message
     });
   }
 };
@@ -401,6 +471,9 @@ const updateRecord = (prisma) => async (req, res) => {
     const updated = await prisma.uutRecord.update({
       where: { id },
       data: updateData,
+      include: {
+        uutTests: true
+      }
     });
 
     res.json({
@@ -453,10 +526,12 @@ const checkoutRecord = (prisma) => async (req, res) => {
         error: "Record not found",
       });
     }
+    
     const totalOutSoFar = record.outs.reduce(
       (sum, out) => sum + (out.outQty || 0),
       0
     );
+    
     if (totalOutSoFar + outQty > record.uutQty) {
       return res.status(400).json({
         success: false,
@@ -465,6 +540,7 @@ const checkoutRecord = (prisma) => async (req, res) => {
         } units remaining.`,
       });
     }
+    
     const uutOut = await prisma.uutOut.create({
       data: {
         uutRecordId: record.id,
@@ -473,10 +549,15 @@ const checkoutRecord = (prisma) => async (req, res) => {
         remarks: remarks || null,
       },
     });
+    
     const updatedRecord = await prisma.uutRecord.findUnique({
       where: { id },
-      include: { outs: true },
+      include: { 
+        outs: true,
+        uutTests: true 
+      },
     });
+    
     res.json({
       success: true,
       data: updatedRecord,
@@ -494,6 +575,7 @@ const checkoutRecord = (prisma) => async (req, res) => {
 const deleteRecord = (prisma) => async (req, res) => {
   try {
     const { id } = req.params;
+    
     await prisma.uutOut.deleteMany({
       where: { uutRecordId: id },
     });
@@ -554,7 +636,6 @@ const getStats = (prisma) => async (req, res) => {
   }
 };
 
-// Get all unique project names for dropdown
 const getProjectNames = (prisma) => async (req, res) => {
   try {
     const projects = await prisma.uutRecord.findMany({
@@ -584,7 +665,6 @@ const getProjectNames = (prisma) => async (req, res) => {
   }
 };
 
-// Get all serial numbers for a specific project
 const getSerialNumbersByProject = (prisma) => async (req, res) => {
   try {
     const { projectName } = req.params;
@@ -608,6 +688,11 @@ const getSerialNumbersByProject = (prisma) => async (req, res) => {
         customerName: true,
         testTypeName: true,
         uutType: true,
+        uutTests: {  
+          select: {
+            testName: true
+          }
+        }
       },
       orderBy: {
         serialNo: "asc",
@@ -619,6 +704,7 @@ const getSerialNumbersByProject = (prisma) => async (req, res) => {
       customerName: r.customerName,
       testTypeName: r.testTypeName,
       uutType: r.uutType,
+      tests: r.uutTests.map(t => t.testName),
     }));
 
     res.json({
@@ -634,7 +720,6 @@ const getSerialNumbersByProject = (prisma) => async (req, res) => {
   }
 };
 
-// Get project for a specific serial number
 const getProjectBySerialNumber = (prisma) => async (req, res) => {
   try {
     const { serialNo } = req.params;
@@ -663,6 +748,13 @@ const getProjectBySerialNumber = (prisma) => async (req, res) => {
         uutType: true,
         uutQty: true,
         contactPersonName: true,
+        uutTests: { 
+          select: {
+            id: true,
+            testId: true,
+            testName: true
+          }
+        }
       },
     });
 
