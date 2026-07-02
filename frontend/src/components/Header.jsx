@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../components/authentication/authContext";
+import NotificationBell from "./Notification/NotificationBell";
 
 const Header = () => {
   const { user, logout, loading } = useAuth();
@@ -148,6 +149,7 @@ const Header = () => {
           </nav>
 
           <div className="flex items-center pr-3 py-2" ref={menuRef}>
+            <NotificationBell />
             <button
               type="button"
               onClick={() => setMenuOpen((v) => !v)}
@@ -160,7 +162,7 @@ const Header = () => {
               </div>
 
               <div className="hidden sm:flex flex-col items-start  leading-tight">
-                <span className="text-sm font-semibold text-slate-900 group-hover:text-slate-700  max-w-35  truncate">
+               <span className="text-sm font-semibold text-slate-900 group-hover:text-slate-700  max-w-35  truncate">
                   {user?.name || user?.email}
                 </span>
                 <span className="text-xs text-gray-200 group-hover:text-slate-700  uppercase tracking-wide">

@@ -1,6 +1,7 @@
 import React from "react";
 import { Routes, Route, Navigate } from "react-router-dom";
 import { Toaster } from "./components/ui/sonner";
+import { SocketProvider } from "./context/SocketContext";
 import ProtectedRoute from "./components/ProtectedRoute";
 import Layout from "./components/authentication/layout";
 import AuthLayout from "./components/authentication/AuthLayout";
@@ -15,7 +16,6 @@ import RequestForm from "./Pages/RequestForm/requestForm";
 import CreateProject from "./Pages/CreateProject/CreateProject";
 import RequestFormView from "./Pages/RequestForm/RequestFormView";
 import CustomerDashboard from "./Pages/RequestForm/CustomerDashboard";
-import TestRequestPreview from "./components/customizedComponents/TestRequestPreview";
 import EquipmentListPage from "./Pages/Equipment_Details/EquipmentListPage";
 import EquipmentDetail from "./Pages/Equipment_Details/EquipmentDetail";
 
@@ -23,6 +23,7 @@ export default function App() {
   return (
     <>
       <Toaster position="bottom-center" richColors />
+      <SocketProvider>
       <Routes>
         <Route
           path="/login"
@@ -52,6 +53,7 @@ export default function App() {
 
         <Route path="*" element={<Navigate to="/dashboard" replace />} />
       </Routes>
+      </SocketProvider>
     </>
   );
 }
