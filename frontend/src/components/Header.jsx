@@ -53,6 +53,11 @@ const Header = () => {
         path:"/equipment",
         label:"Equipment Details",
         roles:["HOD", "MANAGER"],
+      },
+       {
+        path:"/createProject",
+        label:"Create Project",
+        roles:["HOD", "MANAGER"],
       }
     ],
     [],
