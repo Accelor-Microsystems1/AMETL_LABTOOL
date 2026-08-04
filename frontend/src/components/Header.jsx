@@ -223,13 +223,11 @@ const Header = () => {
           </div>
         </div>
       </div>
-
       <div className={`lg:hidden ${menuOpen ? "" : "hidden"}`}>
         <div
           className="fixed inset-0 bg-black/40 z-40"
           onClick={() => setMenuOpen(false)}
         />
-
         <div className="fixed right-0 top-0 h-full w-80 max-w-[85vw] z-50 bg-white shadow-2xl">
           <div className="p-4 border-b border-slate-100 flex items-center justify-between">
             <div>
