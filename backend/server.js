@@ -1,10 +1,13 @@
 require('dotenv').config();
+const http = require('http');
+const { Server } = require('socket.io');
 const express = require('express');
 const path = require('path');
 const cors = require('cors');
 const { PrismaClient } = require('@prisma/client');
 const { Pool } = require('pg');
 const { PrismaPg } = require('@prisma/adapter-pg');
+const { initializeSocket } = require('./socket/socketHandler');
 const { createAllEmployeesRouter } = require('./routers/User_Management/AllEmployees.routes');
 const { createAuthRouter } = require('./routers/User_Management/auth.routes');
 const createTestRequestRouter = require('./routers/Test_Request/testRequest.Routes');
@@ -25,11 +28,23 @@ const pool = new Pool({
 const adapter = new PrismaPg(pool);
 const prisma = new PrismaClient({ adapter });
 
-// Debug: Check prisma
 console.log('Prisma test model:', prisma.test ? '✅ Available' : '❌ Not found');
 
-// App setup
 const app = express();
+const server = http.createServer(app);
+
+const io = new Server(server, {
+  cors: {
+    origin: process.env.FRONTEND_URL,
+    methods: ['GET', 'POST', 'PUT', 'DELETE'],
+    credentials: true,
+  },
+});
+
+app.set('io', io);
+
+initializeSocket(io);
+
 app.use(cors());
 app.use(express.json());
 

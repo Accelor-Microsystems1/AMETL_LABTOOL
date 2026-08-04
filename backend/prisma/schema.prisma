@@ -309,3 +309,42 @@ model IncidentRecord {
 }
 
 
+model Notification {
+  id                  String         @id @default(uuid())
+  userId              String?
+  role                Role?
+  category            String
+  event               String
+  title               String
+  messgae             String          @db.Text
+  priority            String          @default("MEDIUM")
+  icon                String?
+  color               String?
+  relatedID           String?
+  relatedType         String?
+  actionUrl           String?
+  metadata            Json?
+  isRead              Boolean           @default(false)
+  readAt              DateTime?
+  createdById         String?
+  createdAt           DateTime         @default(now())
+
+  @@index([userId])
+  @@index([role])
+  @@index([isRead])
+  @@index([category])
+  @@index([createdAt])
+}
+
+model NotificationPreference {
+  id                String            @id @default(uuid())
+  userId            String
+  category          String
+  enabled           Boolean           @default(true)
+  channels          String[]          @default(["in_app"])
+  createdAt         DateTime          @default(now())
+  updatedAt         DateTime          @updatedAt
+
+  @@unique([userId, category])
+  @@index([userId])
+}

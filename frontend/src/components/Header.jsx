@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../components/authentication/authContext";
+import NotificationBell from "./Notification/NotificationBell";
 
 const Header = () => {
   const { user, logout, loading } = useAuth();
@@ -52,6 +53,11 @@ const Header = () => {
       {
         path:"/equipment",
         label:"Equipment Details",
+        roles:["HOD", "MANAGER"],
+      },
+       {
+        path:"/createProject",
+        label:"Create Project",
         roles:["HOD", "MANAGER"],
       }
     ],
@@ -143,6 +149,7 @@ const Header = () => {
           </nav>
 
           <div className="flex items-center pr-3 py-2" ref={menuRef}>
+            <NotificationBell />
             <button
               type="button"
               onClick={() => setMenuOpen((v) => !v)}
@@ -155,7 +162,7 @@ const Header = () => {
               </div>
 
               <div className="hidden sm:flex flex-col items-start  leading-tight">
-                <span className="text-sm font-semibold text-slate-900 group-hover:text-slate-700  max-w-35  truncate">
+               <span className="text-sm font-semibold text-slate-900 group-hover:text-slate-700  max-w-35  truncate">
                   {user?.name || user?.email}
                 </span>
                 <span className="text-xs text-gray-200 group-hover:text-slate-700  uppercase tracking-wide">
@@ -216,13 +223,11 @@ const Header = () => {
           </div>
         </div>
       </div>
-
       <div className={`lg:hidden ${menuOpen ? "" : "hidden"}`}>
         <div
           className="fixed inset-0 bg-black/40 z-40"
           onClick={() => setMenuOpen(false)}
         />
-
         <div className="fixed right-0 top-0 h-full w-80 max-w-[85vw] z-50 bg-white shadow-2xl">
           <div className="p-4 border-b border-slate-100 flex items-center justify-between">
             <div>
